@@ -7,7 +7,7 @@ from lineracer import *
 def test_track():
     track = RaceTrack.generate_random_track()
     assert isinstance(track, RaceTrack)
-    assert np.linalg.norm(track.start_finish) < 1e-6
+    assert np.linalg.norm(track.start_middle_point) < 1e-6
 
 def test_race():
     race = Race(n_vehicles=3)
