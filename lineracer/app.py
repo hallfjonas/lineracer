@@ -54,7 +54,7 @@ class App:
             self.track_plot.remove()
 
         # regenerate and plot track 
-        self.race.track = RaceTrack.generate_random_track()
+        self.race.set_track(RaceTrack.generate_random_track())
         self.track_plot, = self.race.track.plot_track(ax=self.ax)
         lims = self.race.track.get_limits()
         self.ax.set_xlim(lims[0])

@@ -160,6 +160,11 @@ class Race:
             self.n_vehicles = len(self.vehicles)
         self.cv_idx = 0
 
+    def set_track(self, track):
+        self.track = track
+        for v in self.vehicles:
+            v.track = track
+
     def get_cv(self):
         return self.vehicles[self.cv_idx]
     

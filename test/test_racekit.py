@@ -8,7 +8,7 @@ def test_track():
     track = RaceTrack.generate_random_track()
     assert isinstance(track, RaceTrack)
     assert np.linalg.norm(track.start_finish) < 1e-6
-    
+
 def test_race():
     race = Race(n_vehicles=3)
     assert isinstance(race.track, RaceTrack)
@@ -19,6 +19,17 @@ def test_race():
         for v2 in race.vehicles:
             if v1 != v2:
                 assert v1.color != v2.color
+                assert v1.track == v2.track
+    
+    new_track = RaceTrack.generate_random_track()
+    race.set_track(new_track)
+    assert isinstance(race.track, RaceTrack)
+    for v1 in race.vehicles:
+        for v2 in race.vehicles:
+            if v1 != v2:
+                assert v1.color != v2.color
+                assert v1.track == v2.track
+    assert v1.track == new_track
 
 def test_dynamics():
     v = Vehicle()
