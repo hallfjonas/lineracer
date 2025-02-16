@@ -50,9 +50,8 @@ class RaceTrack:
 
     def distance_to_middle_line(self, point):
         """Calculate the distance from the given point to the middle line."""
-        x, y = point
         closest_point = self.project_to_middle_line(point)
-        return np.linalg.norm(np.array(closest_point) - np.array((x, y)))
+        return np.linalg.norm(closest_point - np.array(point))
 
     def get_limits(self):
         """Get the limits of the track."""
