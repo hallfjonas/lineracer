@@ -3,7 +3,7 @@ import tkinter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
-from LineRacer.Race import *
+from Race import *
 
 class App:
     def __init__(self):           

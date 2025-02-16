@@ -104,21 +104,32 @@ vehicle_colors = [
 ]
 
 class Vehicle:
-    def __init__(self, track, position=None, velocity=[0.,0.], color='black', marker='o'):
+    def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o'):
         self.track: RaceTrack = track
-        self.position = np.array(position) if position is not None else track.start_finish
+        if position is not None:
+            self.position = np.array(position)
+        elif self.track is not None:
+            self.position = np.array(self.track.start_finish)
+        else:
+            self.position = np.zeros(2)
         self.velocity = np.array(velocity)
         self.u = None
         self.color = color
         self.marker = marker
         
     def check_collision(self):
+        if self.track is None:
+            return
         if not self.track.is_on_track(self.position):
             self.reset()
 
     def reset(self):
         self.velocity = np.array([0., 0.])
-        self.position = self.track.project_to_boundary(self.position)
+
+        if self.track is not None:
+            self.position = self.track.project_to_boundary(self.position)
+        else:
+            self.position = np.zeros(2)
 
     def update(self):
         if self.u is not None:
