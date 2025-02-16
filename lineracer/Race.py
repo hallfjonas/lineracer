@@ -9,13 +9,13 @@ def smooth_line(points):
         return x_smooth, y_spline
 
 class RaceTrack:
-    def __init__(self, middle_line, left_boundary, right_boundary, start_finish, width):
+    def __init__(self, middle_line, left_boundary, right_boundary, start_middle_point, width):
         """
         Initializes the race track.
         :param middle_line: List of (x, y) tuples defining the middle line.
         :param left_boundary: List of (x, y) tuples defining the left boundary.
         :param right_boundary: List of (x, y) tuples defining the right boundary.
-        :param start_finish: (x, y) tuple marking the start/finish line.
+        :param start_middle_point: (x, y) tuple marking the mid-line point on the start line.
         :param width: Width of the track.
         """
         self.middle_line = middle_line
@@ -24,7 +24,7 @@ class RaceTrack:
         self.directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
         for i in range(len(self.directions)):
             self.directions[i] /= np.linalg.norm(self.directions[i])
-        self.start_finish = start_finish
+        self.start_middle_point = start_middle_point
         self.width = width
         self.progress_map = {tuple(point): i / len(middle_line) for i, point in enumerate(middle_line)}
         self.i_map = {tuple(point): i for i, point in enumerate(middle_line)}
@@ -50,9 +50,8 @@ class RaceTrack:
 
     def distance_to_middle_line(self, point):
         """Calculate the distance from the given point to the middle line."""
-        x, y = point
         closest_point = self.project_to_middle_line(point)
-        return np.linalg.norm(np.array(closest_point) - np.array((x, y)))
+        return np.linalg.norm(closest_point - np.array(point))
 
     def get_limits(self):
         """Get the limits of the track."""
@@ -85,18 +84,19 @@ class RaceTrack:
         y_vals = np.cumsum(np.cumsum(np.random.uniform(-y_var, y_var, num_points)))  # Smooth variation
         
         middle_line = list(zip(x_vals, y_vals))
-        start_finish = middle_line[0]
 
         # smoothen middle line
         middle_x, middle_y = smooth_line(middle_line)
+        middle_y = middle_y - middle_y[0]
         middle_line = np.array(list(zip(middle_x, middle_y)))
+        start_middle_point = middle_line[0]
 
         directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
         for i in range(len(directions)):
             directions[i] /= np.linalg.norm(directions[i])
         left_boundary = [middle_line[i,:] + width/2 * np.array([directions[i][1], -directions[i][0]]) for i in range(len(directions))]
         right_boundary = [middle_line[i,:] - width/2 * np.array([directions[i][1], -directions[i][0]]) for i in range(len(directions))]
-        return RaceTrack(middle_line, np.array(left_boundary), np.array(right_boundary), start_finish, width)
+        return RaceTrack(middle_line, np.array(left_boundary), np.array(right_boundary), start_middle_point, width)
 
 vehicle_colors = [
     '#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628', 
@@ -104,21 +104,28 @@ vehicle_colors = [
 ]
 
 class Vehicle:
-    def __init__(self, track, position=None, velocity=[0.,0.], color='black', marker='o'):
+    def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o'):
         self.track: RaceTrack = track
-        self.position = np.array(position) if position is not None else track.start_finish
+        if position is not None:
+            self.position = np.array(position)
+        elif self.track is not None:
+            self.position = np.array(self.track.start_middle_point)
+        else:
+            self.position = np.zeros(2)
         self.velocity = np.array(velocity)
         self.u = None
         self.color = color
         self.marker = marker
         
     def check_collision(self):
+        if self.track is None:
+            return
         if not self.track.is_on_track(self.position):
             self.reset()
 
     def reset(self):
         self.velocity = np.array([0., 0.])
-        self.position = self.track.project_to_boundary(self.position)
+        self.position = np.array(self.track.start_middle_point)
 
     def update(self):
         if self.u is not None:
@@ -147,6 +154,11 @@ class Race:
         else:
             self.n_vehicles = len(self.vehicles)
         self.cv_idx = 0
+
+    def set_track(self, track):
+        self.track = track
+        for v in self.vehicles:
+            v.track = track
 
     def get_cv(self):
         return self.vehicles[self.cv_idx]

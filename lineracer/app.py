@@ -3,7 +3,7 @@ import tkinter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
-from LineRacer.Race import *
+from Race import *
 
 class App:
     def __init__(self):           
@@ -17,6 +17,7 @@ class App:
     
         # tool tip to update control
         self.predicted, = self.ax.plot([], [], '-', alpha=0.8)
+        self.predicted_uncontrolled, = self.ax.plot([], [], '--', alpha=1.0)
         
         # generate canvas
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
@@ -54,7 +55,7 @@ class App:
             self.track_plot.remove()
 
         # regenerate and plot track 
-        self.race.track = RaceTrack.generate_random_track()
+        self.race.set_track(RaceTrack.generate_random_track())
         self.track_plot, = self.race.track.plot_track(ax=self.ax)
         lims = self.race.track.get_limits()
         self.ax.set_xlim(lims[0])
@@ -62,8 +63,7 @@ class App:
 
         # reset the vehicles
         for v in self.race.vehicles: 
-            v.position = self.race.track.start_finish
-            v.velocity = np.array([0., 0.])
+            v.reset()
             vpd = self.vehicle_plot_data[v]
             vpd['pos'].set_data([v.position[0]], [v.position[1]])
             vpd['hp'].set_data([v.position[0]], [v.position[1]])
@@ -99,7 +99,12 @@ class App:
             vpd['progress'].config(text=f"Progress: {round(cv.track.lap_progress(cv.position)*100)}%")
             self.canvas.draw()
             cv.u = None
-            self.race.next_cv()
+            new_cv = self.race.next_cv()
+            np = new_cv.position
+            npu = new_cv.position + new_cv.velocity
+            self.predicted_uncontrolled.set_data([np[0], npu[0]], [np[1], npu[1]])
+            self.predicted_uncontrolled.set_color(new_cv.color)
+            self.canvas.draw()
 
     def on_mouse_hover(self, event):
         if event.xdata is None:
