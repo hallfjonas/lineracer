@@ -17,6 +17,7 @@ class App:
     
         # tool tip to update control
         self.predicted, = self.ax.plot([], [], '-', alpha=0.8)
+        self.predicted_uncontrolled, = self.ax.plot([], [], '--', alpha=1.0)
         
         # generate canvas
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
@@ -99,7 +100,12 @@ class App:
             vpd['progress'].config(text=f"Progress: {round(cv.track.lap_progress(cv.position)*100)}%")
             self.canvas.draw()
             cv.u = None
-            self.race.next_cv()
+            new_cv = self.race.next_cv()
+            np = new_cv.position
+            npu = new_cv.position + new_cv.velocity
+            self.predicted_uncontrolled.set_data([np[0], npu[0]], [np[1], npu[1]])
+            self.predicted_uncontrolled.set_color(new_cv.color)
+            self.canvas.draw()
 
     def on_mouse_hover(self, event):
         if event.xdata is None:
