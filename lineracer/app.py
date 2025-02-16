@@ -63,8 +63,7 @@ class App:
 
         # reset the vehicles
         for v in self.race.vehicles: 
-            v.position = self.race.track.start_finish
-            v.velocity = np.array([0., 0.])
+            v.reset()
             vpd = self.vehicle_plot_data[v]
             vpd['pos'].set_data([v.position[0]], [v.position[1]])
             vpd['hp'].set_data([v.position[0]], [v.position[1]])
