@@ -3,7 +3,7 @@ from distutils.core import setup
 import warnings
 
 setup(name='lineracer',
-   version='0.0.1',
+   version='0.1.0',
    python_requires='>=3.8',
    description='A simple turn-based multiplayer racing game.',
    author='Jonas Hall',
