@@ -50,9 +50,8 @@ class RaceTrack:
 
     def distance_to_middle_line(self, point):
         """Calculate the distance from the given point to the middle line."""
-        x, y = point
         closest_point = self.project_to_middle_line(point)
-        return np.linalg.norm(np.array(closest_point) - np.array((x, y)))
+        return np.linalg.norm(closest_point - np.array(point))
 
     def get_limits(self):
         """Get the limits of the track."""
@@ -85,11 +84,12 @@ class RaceTrack:
         y_vals = np.cumsum(np.cumsum(np.random.uniform(-y_var, y_var, num_points)))  # Smooth variation
         
         middle_line = list(zip(x_vals, y_vals))
-        start_finish = middle_line[0]
 
         # smoothen middle line
         middle_x, middle_y = smooth_line(middle_line)
+        middle_y = middle_y - middle_y[0]
         middle_line = np.array(list(zip(middle_x, middle_y)))
+        start_finish = middle_line[0]
 
         directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
         for i in range(len(directions)):
@@ -125,11 +125,7 @@ class Vehicle:
 
     def reset(self):
         self.velocity = np.array([0., 0.])
-
-        if self.track is not None:
-            self.position = self.track.project_to_boundary(self.position)
-        else:
-            self.position = np.zeros(2)
+        self.position = np.array(self.track.start_finish)
 
     def update(self):
         if self.u is not None:
@@ -158,6 +154,11 @@ class Race:
         else:
             self.n_vehicles = len(self.vehicles)
         self.cv_idx = 0
+
+    def set_track(self, track):
+        self.track = track
+        for v in self.vehicles:
+            v.track = track
 
     def get_cv(self):
         return self.vehicles[self.cv_idx]
