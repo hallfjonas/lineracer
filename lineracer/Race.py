@@ -125,7 +125,10 @@ class Vehicle:
 
     def reset(self):
         self.velocity = np.array([0., 0.])
-        self.position = np.array(self.track.start_middle_point)
+        if self.track is None:
+            self.position = np.zeros(2)
+        else:
+            self.position = np.array(self.track.start_middle_point)
 
     def update(self):
         if self.u is not None:
