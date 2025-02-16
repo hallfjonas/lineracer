@@ -85,11 +85,12 @@ class RaceTrack:
         y_vals = np.cumsum(np.cumsum(np.random.uniform(-y_var, y_var, num_points)))  # Smooth variation
         
         middle_line = list(zip(x_vals, y_vals))
-        start_finish = middle_line[0]
 
         # smoothen middle line
         middle_x, middle_y = smooth_line(middle_line)
+        middle_y = middle_y - middle_y[0]
         middle_line = np.array(list(zip(middle_x, middle_y)))
+        start_finish = middle_line[0]
 
         directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
         for i in range(len(directions)):
