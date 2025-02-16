@@ -1,1 +1,0 @@
-from LineRacer.Race import *
