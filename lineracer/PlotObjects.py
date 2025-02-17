@@ -33,6 +33,10 @@ class PlotObject:
             obj.remove()
         self._objs.clear()
 
+    def first(self):
+        if len(self._objs) == 0:
+            return None
+        return self._objs[0]
 
 '''
 getAxes: Get the current axis.
