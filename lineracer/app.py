@@ -41,18 +41,18 @@ class App:
         self.vehicle_plot_data = {}
         for v in self.race.vehicles: 
             vpd = self.vehicle_plot_data[v] = {}
-            vpd['pos'] = self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color)[0]
-            vpd['hp'] = self.ax.plot(v.position[0], v.position[1], '-', color=v.color)[0]
-            vpd['x_history'] = [v.position[0]]
-            vpd['y_history'] = [v.position[1]]
             vpd['progress'] = tkinter.Label(self.root,text='Progress: 0%',fg=v.color)
             vpd['progress'].pack(fill=tkinter.BOTH)
-
         self.reset_racetrack()
         
     def reset_racetrack(self):
         if self.track_plot is not None:
             self.track_plot.remove()
+            for v in self.race.vehicles: 
+                vpd = self.vehicle_plot_data[v]
+                if 'pos' in vpd and vpd['pos'] is not None:
+                    vpd['pos'].remove()
+                    vpd['hp'].remove()
 
         # regenerate and plot track 
         self.race.set_track(RaceTrack.generate_random_track())
@@ -65,10 +65,11 @@ class App:
         for v in self.race.vehicles: 
             v.reset()
             vpd = self.vehicle_plot_data[v]
-            vpd['pos'].set_data([v.position[0]], [v.position[1]])
-            vpd['hp'].set_data([v.position[0]], [v.position[1]])
+            vpd['pos'] = self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color)[0]
+            vpd['hp'] = self.ax.plot(v.position[0], v.position[1], '-', color=v.color)[0]
             vpd['x_history'] = [v.position[0]]
-            vpd['y_history'] = [v.position[1]]        
+            vpd['y_history'] = [v.position[1]]
+
         self.predicted.set_data([], [])
         self.canvas.draw()
 
