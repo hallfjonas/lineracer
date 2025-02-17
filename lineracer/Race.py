@@ -73,7 +73,10 @@ class RaceTrack:
     def lap_progress(self, point):
         """Calculate progress along the lap based on closest middle line segment."""
         mp = self.project_to_middle_line(point)
-        return self.progress_map[tuple(mp)]
+        progress_start = self.progress_map[self.get_start_middle_point()]
+        progress_end = self.progress_map[self.get_finish_middle_point()]
+        progress_point = self.progress_map[tuple(mp)]
+        return (progress_point - progress_start) / (progress_end - progress_start)
     
     def plot_track(self, ax: plt.Axes = None, color='black'):
         """Plot the race track using matplotlib."""
