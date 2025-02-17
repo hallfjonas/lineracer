@@ -1,9 +1,12 @@
-import tkinter
 
+# external imports
+import tkinter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
+# internal imports
 from Race import *
+from PlotObjects import *
 
 class App:
     def __init__(self):           
@@ -16,8 +19,8 @@ class App:
         self.ax.set_axis_off()
     
         # tool tip to update control
-        self.predicted, = self.ax.plot([], [], '-', alpha=0.8)
-        self.predicted_uncontrolled, = self.ax.plot([], [], '--', alpha=1.0)
+        self.predicted: PlotObject = PlotObject(self.ax.plot([], [], '-', alpha=0.8))
+        self.predicted_uncontrolled: PlotObject = PlotObject(self.ax.plot([], [], '--', alpha=1.0))
         
         # generate canvas
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
@@ -56,7 +59,7 @@ class App:
 
         # regenerate and plot track 
         self.race.set_track(RaceTrack.generate_random_track())
-        self.track_plot, = self.race.track.plot_track(ax=self.ax)
+        self.track_plot: PlotObject = self.race.track.plot_track(ax=self.ax)
         lims = self.race.track.get_limits()
         self.ax.set_xlim(lims[0])
         self.ax.set_ylim(lims[1])
@@ -65,12 +68,13 @@ class App:
         for v in self.race.vehicles: 
             v.reset()
             vpd = self.vehicle_plot_data[v]
-            vpd['pos'] = self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color)[0]
-            vpd['hp'] = self.ax.plot(v.position[0], v.position[1], '-', color=v.color)[0]
+            vpd['pos'] = PlotObject(self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color))
+            vpd['hp'] = PlotObject(self.ax.plot(v.position[0], v.position[1], '-', color=v.color))
             vpd['x_history'] = [v.position[0]]
             vpd['y_history'] = [v.position[1]]
 
-        self.predicted.set_data([], [])
+        self.predicted.first().set_data([], [])
+        self.predicted_uncontrolled.first().set_data([], [])
         self.canvas.draw()
 
     def update_control(self, event):
@@ -93,18 +97,18 @@ class App:
         if cv.u is not None:
             cv.update()
             vpd = self.vehicle_plot_data[cv]
-            vpd['pos'].set_data([cv.position[0]], [cv.position[1]])
+            vpd['pos'].first().set_data([cv.position[0]], [cv.position[1]])
             vpd['x_history'].append(cv.position[0])
             vpd['y_history'].append(cv.position[1])
-            vpd['hp'].set_data(self.vehicle_plot_data[cv]['x_history'], self.vehicle_plot_data[cv]['y_history'])
+            vpd['hp'].first().set_data(self.vehicle_plot_data[cv]['x_history'], self.vehicle_plot_data[cv]['y_history'])
             vpd['progress'].config(text=f"Progress: {round(cv.track.lap_progress(cv.position)*100)}%")
             self.canvas.draw()
             cv.u = None
             new_cv = self.race.next_cv()
             np = new_cv.position
             npu = new_cv.position + new_cv.velocity
-            self.predicted_uncontrolled.set_data([np[0], npu[0]], [np[1], npu[1]])
-            self.predicted_uncontrolled.set_color(new_cv.color)
+            self.predicted_uncontrolled.first().set_data([np[0], npu[0]], [np[1], npu[1]])
+            self.predicted_uncontrolled.first().set_color(new_cv.color)
             self.canvas.draw()
 
     def on_mouse_hover(self, event):
@@ -113,8 +117,8 @@ class App:
         cv = self.race.get_cv()
         self.update_control(event)
         next_p = cv.position + cv.velocity + cv.u
-        self.predicted.set_data([cv.position[0], next_p[0]], [cv.position[1], next_p[1]])
-        self.predicted.set_color(cv.color)
+        self.predicted.first().set_data([cv.position[0], next_p[0]], [cv.position[1], next_p[1]])
+        self.predicted.first().set_color(cv.color)
         self.canvas.draw()
 
     def _quit(self):
