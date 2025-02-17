@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
+import warnings
 
 def smooth_line(points):
         x, y = zip(*points)
