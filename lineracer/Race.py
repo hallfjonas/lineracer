@@ -141,6 +141,7 @@ class Vehicle:
         self.color = color
         self.marker = marker
         self.controller: Controller = kwargs.get('controller', DiscreteController())
+        self.trajectory = np.array(self.position).reshape(2,1)
 
     def check_collision(self):
         if self.track is None:
@@ -157,11 +158,13 @@ class Vehicle:
             self.position = np.zeros(2)
         else:
             self.position = np.array(self.track.start_middle_point)
+        self.trajectory = np.array(self.position).reshape(2,1)
 
     def update(self):
         if self.u is not None:
             self.velocity += np.array(self.u)
         self.position += self.velocity
+        self.trajectory = np.hstack([self.trajectory, self.position.reshape(2,1)])
         self.check_collision()
 
 class Race:
