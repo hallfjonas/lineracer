@@ -103,8 +103,32 @@ vehicle_colors = [
     '#984ea3', '#999999', '#e41a1c', '#dede00'
 ]
 
+class Grid:
+    def __init__(self, dx = 0.25, dy = 0.25):
+        self.dx = dx
+        self.dy = dy
+
+class Controller:
+    def __init__(self):
+        pass
+
+    def get_feasible_controls(self):
+        pass
+
+class DiscreteController(Controller):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.grid = kwargs.get('grid', Grid())
+        self.controls = []
+        for i in [-1,0,1]:
+            for j in [-1,0,1]:
+                self.controls.append([i*self.grid.dx, j*self.grid.dy])
+
+    def get_feasible_controls(self):
+        return self.controls
+
 class Vehicle:
-    def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o'):
+    def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o', **kwargs):
         self.track: RaceTrack = track
         if position is not None:
             self.position = np.array(position)
@@ -116,12 +140,16 @@ class Vehicle:
         self.u = None
         self.color = color
         self.marker = marker
-        
+        self.controller: Controller = kwargs.get('controller', DiscreteController())
+
     def check_collision(self):
         if self.track is None:
             return
         if not self.track.is_on_track(self.position):
             self.reset()
+
+    def get_feasible_controls(self):
+        return self.controller.get_feasible_controls()
 
     def reset(self):
         self.velocity = np.array([0., 0.])
@@ -136,19 +164,11 @@ class Vehicle:
         self.position += self.velocity
         self.check_collision()
 
-class Grid:
-    def __init__(self, dx = 0.25, dy = 0.25):
-        self.dx = dx
-        self.dy = dy
-
 class Race:
     def __init__(self, **kwargs):
         self.track: RaceTrack = kwargs.get('track', RaceTrack.generate_random_track(y_var=1))
         self.grid = kwargs.get('grid', Grid())
-        self.feasible_controls = []
-        for i in [-1,0,1]:
-            for j in [-1,0,1]:
-                self.feasible_controls.append([i*self.grid.dx, j*self.grid.dy])
+        
 
         self.vehicles = kwargs.get('vehicles', None)
         if self.vehicles is None:

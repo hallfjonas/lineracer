@@ -54,3 +54,12 @@ def test_reset():
     assert np.allclose(v.position, np.array([0., 0.]))
     assert np.allclose(v.velocity, np.array([0., 0.]))
     
+def test_controller():
+    c = DiscreteController()
+    assert len(c.get_feasible_controls()) > 0
+
+    v = Vehicle()
+    assert len(v.get_feasible_controls()) > 0
+
+    v2 = Vehicle(controller=c)
+    assert v2.get_feasible_controls() == c.get_feasible_controls()
