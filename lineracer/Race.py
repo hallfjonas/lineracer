@@ -103,6 +103,30 @@ vehicle_colors = [
     '#984ea3', '#999999', '#e41a1c', '#dede00'
 ]
 
+class Grid:
+    def __init__(self, dx = 0.25, dy = 0.25):
+        self.dx = dx
+        self.dy = dy
+
+class Controller:
+    def __init__(self):
+        pass
+
+    def get_feasible_controls(self):
+        pass
+
+class DiscreteController(Controller):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.grid = kwargs.get('grid', Grid())
+        self.controls = []
+        for i in [-1,0,1]:
+            for j in [-1,0,1]:
+                self.controls.append([i*self.grid.dx, j*self.grid.dy])
+
+    def get_feasible_controls(self):
+        return self.controls
+
 class Vehicle:
     def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o'):
         self.track: RaceTrack = track
@@ -135,11 +159,6 @@ class Vehicle:
             self.velocity += np.array(self.u)
         self.position += self.velocity
         self.check_collision()
-
-class Grid:
-    def __init__(self, dx = 0.25, dy = 0.25):
-        self.dx = dx
-        self.dy = dy
 
 class Race:
     def __init__(self, **kwargs):
