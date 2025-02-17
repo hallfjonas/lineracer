@@ -168,10 +168,7 @@ class Race:
     def __init__(self, **kwargs):
         self.track: RaceTrack = kwargs.get('track', RaceTrack.generate_random_track(y_var=1))
         self.grid = kwargs.get('grid', Grid())
-        self.feasible_controls = []
-        for i in [-1,0,1]:
-            for j in [-1,0,1]:
-                self.feasible_controls.append([i*self.grid.dx, j*self.grid.dy])
+        
 
         self.vehicles = kwargs.get('vehicles', None)
         if self.vehicles is None:
