@@ -128,7 +128,7 @@ class DiscreteController(Controller):
         return self.controls
 
 class Vehicle:
-    def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o'):
+    def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o', **kwargs):
         self.track: RaceTrack = track
         if position is not None:
             self.position = np.array(position)
@@ -140,12 +140,16 @@ class Vehicle:
         self.u = None
         self.color = color
         self.marker = marker
-        
+        self.controller: Controller = kwargs.get('controller', DiscreteController())
+
     def check_collision(self):
         if self.track is None:
             return
         if not self.track.is_on_track(self.position):
             self.reset()
+
+    def get_feasible_controls(self):
+        return self.controller.get_feasible_controls()
 
     def reset(self):
         self.velocity = np.array([0., 0.])
