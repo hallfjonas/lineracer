@@ -68,7 +68,9 @@ class App:
             vpd['pos'].set_data([v.position[0]], [v.position[1]])
             vpd['hp'].set_data([v.position[0]], [v.position[1]])
             vpd['x_history'] = [v.position[0]]
-            vpd['y_history'] = [v.position[1]]        
+            vpd['y_history'] = [v.position[1]]    
+            vpd['progress'].config(text=f"Progress: {round(v.track.lap_progress(v.position)*100)}%")
+                
         self.predicted.set_data([], [])
         self.canvas.draw()
 
