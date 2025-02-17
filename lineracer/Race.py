@@ -70,6 +70,27 @@ class RaceTrack:
         idx = int(9 * len(self.middle_line) / 10)
         return tuple(self.middle_line[idx,:])
 
+    def plot_line_at_middle_point(self, mp, ax: plt.Axes = None, **kwargs):
+        """Add the starting line using matplotlib."""
+        if ax == None:
+            ax = plt.gca()
+        try:
+            s_dir = self.directions[self.i_map[tuple(mp)]]
+            normal = np.array([s_dir[1], -s_dir[0]])
+            start_left = mp - self.width/2 * normal
+            start_right = mp + self.width/2 * normal
+            return ax.plot([start_left[0], start_right[0]], [start_left[1], start_right[1]], **kwargs)
+        except:
+            warnings.warn("Middle point not found (skipping plot.)")
+
+    def plot_start_line(self, ax: plt.Axes = None, **kwargs):
+        smp = self.get_start_middle_point()
+        return self.plot_line_at_middle_point(smp, ax, **kwargs)
+
+    def plot_finish_line(self, ax: plt.Axes = None, **kwargs):
+        smp = self.get_finish_middle_point()
+        return self.plot_line_at_middle_point(smp, ax, **kwargs)
+
     def lap_progress(self, point):
         """Calculate progress along the lap based on closest middle line segment."""
         mp = self.project_to_middle_line(point)
@@ -82,7 +103,11 @@ class RaceTrack:
         """Plot the race track using matplotlib."""
         if ax == None:
             ax = plt.gca()
-        
+
+        # plot start and finish lines
+        self.plot_start_line(ax, color='white')
+        self.plot_finish_line(ax, color='white')
+
         # fill between boundaries
         return ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
                 np.concatenate([self.left_boundary[:,1], self.right_boundary[::-1,1]]),
