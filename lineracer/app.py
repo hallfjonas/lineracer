@@ -78,7 +78,7 @@ class App:
         # find the feasible control action that leads to the closest point to the mouse
         min_dist = np.inf
         cv.u = None
-        for control in self.race.feasible_controls:
+        for control in cv.get_feasible_controls():
             p = next_p + control
             dist = np.linalg.norm(np.array(p) - np.array([event.xdata, event.ydata]))
             if dist < min_dist:
