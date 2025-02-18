@@ -68,7 +68,8 @@ class App:
             v.reset()
             vpd = self.vehicle_plot_data[v]
             vpd['pos'].set_data([v.position[0]], [v.position[1]])
-            vpd['hp'].set_data(v.trajectory[0,:], v.trajectory[1,:])
+            vpd['hp'].set_data(v.trajectory[0, :], v.trajectory[1, :])
+            vpd['progress'].config(text=f"Progress: {round(v.track.lap_progress(v.position)*100)}%")
 
         self.predicted.set_data([], [])
         self.canvas.draw()
