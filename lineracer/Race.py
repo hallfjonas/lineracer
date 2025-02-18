@@ -1,8 +1,13 @@
 """This files contains classes that implement the race back-end."""
 
+# external imports
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
+import warnings
+
+# internal imports
+from lineracer.PlotObjects import *
 
 def smooth_line(points):
     """Smooth a line using interpolation.
@@ -22,20 +27,18 @@ class RaceTrack:
         middle_line: The middle line of the track.
         left_boundary: The left boundary of the track.
         right_boundary: The right boundary of the track.
-        start_middle_point: The mid-line point on the start line.
         width: The width of the track.
         directions: The directions of the track segments.
         progress_map: A map of middle line points to progress.
         i_map: A map of middle line points to index
     """
-    def __init__(self, middle_line, left_boundary, right_boundary, start_middle_point, width):
+    def __init__(self, middle_line, left_boundary, right_boundary, width):
         """Initializes the race track.
 
         Args:
             middle_line: List of (x, y) tuples defining the middle line.
             left_boundary: List of (x, y) tuples defining the left boundary.
             right_boundary: List of (x, y) tuples defining the right boundary.
-            start_middle_point: (x, y) tuple marking the mid-line point on the start line.
             width: Width of the track.
         """
         self.middle_line = middle_line
@@ -44,7 +47,6 @@ class RaceTrack:
         self.directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
         for i in range(len(self.directions)):
             self.directions[i] /= np.linalg.norm(self.directions[i])
-        self.start_middle_point = start_middle_point
         self.width = width
         self.progress_map = {tuple(point): i / len(middle_line) for i, point in enumerate(middle_line)}
         self.i_map = {tuple(point): i for i, point in enumerate(middle_line)}
@@ -104,6 +106,55 @@ class RaceTrack:
         y = m_y + l_y + r_y
         return [min(x), max(x)], [min(y), max(y)]
 
+    def get_start_middle_point(self) -> tuple:
+        """Get the intersection point between start line and mid-line."""
+        idx = int(len(self.middle_line) / 10)
+        return tuple(self.middle_line[idx,:])
+
+    def get_finish_middle_point(self) -> tuple:
+        """Get the intersection point between goal line and mid-line."""
+        idx = int(9 * len(self.middle_line) / 10)
+        return tuple(self.middle_line[idx,:])
+
+    def plot_line_at_middle_point(self, mp, ax: plt.Axes = None, **kwargs) -> PlotObject:
+        """Add the starting line using matplotlib.
+
+        Args:
+            mp: The middle point to plot the line at (expected to be in the list of mid-line points)
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
+        if ax == None:
+            ax = plt.gca()
+        try:
+            s_dir = self.directions[self.i_map[tuple(mp)]]
+            normal = np.array([s_dir[1], -s_dir[0]])
+            start_left = mp - self.width/2 * normal
+            start_right = mp + self.width/2 * normal
+            return PlotObject(ax.plot([start_left[0], start_right[0]], [start_left[1], start_right[1]], **kwargs))
+        except:
+            warnings.warn("Middle point not found (skipping plot.)")
+
+    def plot_start_line(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
+        """Add the starting line using matplotlib.
+
+        Args:
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
+        smp = self.get_start_middle_point()
+        return self.plot_line_at_middle_point(smp, ax, **kwargs)
+
+    def plot_finish_line(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
+        """Add the finish line using matplotlib.
+
+        Args:
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
+        smp = self.get_finish_middle_point()
+        return self.plot_line_at_middle_point(smp, ax, **kwargs)
+
     def lap_progress(self, point) -> float:
         """Calculate progress along the lap based on closest middle line segment.
 
@@ -115,7 +166,7 @@ class RaceTrack:
         mp = self.project_to_middle_line(point)
         return self.progress_map[tuple(mp)]
 
-    def plot_track(self, ax: plt.Axes = None, color='black'):
+    def plot_track(self, ax: plt.Axes = None, color='black') -> PlotObject:
         """Plot the race track using matplotlib.
 
         Args:
@@ -125,10 +176,20 @@ class RaceTrack:
         if ax is None:
             ax = plt.gca()
 
+
+        # plot object container
+        po = PlotObject()
+
+        # plot start and finish lines
+        po.add(self.plot_start_line(ax, color='white'))
+        po.add(self.plot_finish_line(ax, color='white'))
+
         # fill between boundaries
-        return ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
+        po.add(ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
                 np.concatenate([self.left_boundary[:,1], self.right_boundary[::-1,1]]),
-                color=color)
+                color=color))
+
+        return po
 
     @staticmethod
     def generate_random_track(num_points=10, width=1, y_var=1.):
@@ -148,14 +209,13 @@ class RaceTrack:
         middle_x, middle_y = smooth_line(middle_line)
         middle_y = middle_y - middle_y[0]
         middle_line = np.array(list(zip(middle_x, middle_y)))
-        start_middle_point = middle_line[0]
 
         directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
         for i in range(len(directions)):
             directions[i] /= np.linalg.norm(directions[i])
         left_boundary = [middle_line[i,:] + width/2 * np.array([directions[i][1], -directions[i][0]]) for i in range(len(directions))]
         right_boundary = [middle_line[i,:] - width/2 * np.array([directions[i][1], -directions[i][0]]) for i in range(len(directions))]
-        return RaceTrack(middle_line, np.array(left_boundary), np.array(right_boundary), start_middle_point, width)
+        return RaceTrack(middle_line, np.array(left_boundary), np.array(right_boundary), width)
 
 vehicle_colors = [
     '#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628',
@@ -232,7 +292,7 @@ class Vehicle:
         if position is not None:
             self.position = np.array(position)
         elif self.track is not None:
-            self.position = np.array(self.track.start_middle_point)
+            self.position = np.array(self.track.get_start_middle_point())
         else:
             self.position = np.zeros(2)
         self.velocity = np.array(velocity)
@@ -240,6 +300,7 @@ class Vehicle:
         self.color = color
         self.marker = marker
         self.controller: Controller = kwargs.get('controller', DiscreteController())
+        self.trajectory = np.array(self.position).reshape(2,1)
 
     def check_collision(self):
         """Check if the vehicle has collided.
@@ -269,7 +330,8 @@ class Vehicle:
         if self.track is None:
             self.position = np.zeros(2)
         else:
-            self.position = np.array(self.track.start_middle_point)
+            self.position = np.array(self.track.get_start_middle_point())
+        self.trajectory = np.array(self.position).reshape(2, 1)
 
     def update(self):
         """Update the vehicle position based on the current control action.
@@ -283,6 +345,7 @@ class Vehicle:
         if self.u is not None:
             self.velocity += np.array(self.u)
         self.position += self.velocity
+        self.trajectory = np.hstack([self.trajectory, self.position.reshape(2,1)])
         self.check_collision()
 
 class Race:
