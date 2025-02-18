@@ -1,3 +1,4 @@
+"""The main application for the line racer."""
 
 # external imports
 import tkinter
@@ -40,6 +41,7 @@ class App:
         self.initialize_race()
 
     def initialize_race(self):
+        """Initialize the race."""
         self.race = Race(n_vehicles=2)
         self.vehicle_plot_data = {}
         for v in self.race.vehicles:
@@ -49,6 +51,7 @@ class App:
         self.reset_racetrack()
 
     def reset_racetrack(self):
+        """Reset the racetrack and vehicles."""
         if self.track_plot is not None:
             self.track_plot.remove()
             for v in self.race.vehicles:
@@ -78,6 +81,11 @@ class App:
         self.canvas.draw()
 
     def update_control(self, event):
+        """Update the control action based on the mouse position.
+
+        Args:
+            event: The mouse event.
+        """
         cv = self.race.get_cv()
         next_p = cv.position + cv.velocity
         # find the feasible control action that leads to the closest point to the mouse
@@ -91,6 +99,11 @@ class App:
                 cv.u = control
 
     def on_mouse_release(self, event):
+        """Update vehicle based on the current control action.
+
+        Args:
+            event: The release event.
+        """
         if event.xdata is None:
             return
         cv = self.race.get_cv()
@@ -110,6 +123,11 @@ class App:
             self.canvas.draw()
 
     def on_mouse_hover(self, event):
+        """Update the current vehicle control action based on the mouse position.
+
+        Args:
+            event: The hover event.
+        """
         if event.xdata is None:
             return
         cv = self.race.get_cv()
@@ -120,6 +138,7 @@ class App:
         self.canvas.draw()
 
     def _quit(self):
+        """Quit the application."""
         self.root.quit()
         self.root.destroy()
 

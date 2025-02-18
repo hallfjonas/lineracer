@@ -1,3 +1,4 @@
+"""This files contains classes that implement the race back-end."""
 
 # external imports
 import numpy as np
@@ -9,19 +10,36 @@ import warnings
 from lineracer.PlotObjects import *
 
 def smooth_line(points):
-        x, y = zip(*points)
-        x_smooth = np.linspace(min(x), max(x), 300)
-        y_spline = make_interp_spline(x, y)(x_smooth)
-        return x_smooth, y_spline
+    """Smooth a line using interpolation.
+
+    Args:
+        points: List of (x, y) tuples defining the line.
+    """
+    x, y = zip(*points)
+    x_smooth = np.linspace(min(x), max(x), 300)
+    y_spline = make_interp_spline(x, y)(x_smooth)
+    return x_smooth, y_spline
 
 class RaceTrack:
+    """A class representing a race track.
+
+    Attributes:
+        middle_line: The middle line of the track.
+        left_boundary: The left boundary of the track.
+        right_boundary: The right boundary of the track.
+        width: The width of the track.
+        directions: The directions of the track segments.
+        progress_map: A map of middle line points to progress.
+        i_map: A map of middle line points to index
+    """
     def __init__(self, middle_line, left_boundary, right_boundary, width):
-        """
-        Initializes the race track.
-        :param middle_line: List of (x, y) tuples defining the middle line.
-        :param left_boundary: List of (x, y) tuples defining the left boundary.
-        :param right_boundary: List of (x, y) tuples defining the right boundary.
-        :param width: Width of the track.
+        """Initializes the race track.
+
+        Args:
+            middle_line: List of (x, y) tuples defining the middle line.
+            left_boundary: List of (x, y) tuples defining the left boundary.
+            right_boundary: List of (x, y) tuples defining the right boundary.
+            width: Width of the track.
         """
         self.middle_line = middle_line
         self.left_boundary = left_boundary
@@ -33,17 +51,31 @@ class RaceTrack:
         self.progress_map = {tuple(point): i / len(middle_line) for i, point in enumerate(middle_line)}
         self.i_map = {tuple(point): i for i, point in enumerate(middle_line)}
 
-    def is_on_track(self, point):
-        """Check if a given point lies within the track boundaries."""
+    def is_on_track(self, point) -> bool:
+        """Check if a given point lies within the track boundaries.
+
+        Args:
+            point: The point to check.
+        """
         return self.distance_to_middle_line(point) <= self.width / 2
 
     def project_to_middle_line(self, point):
-        """Find the closest point on the middle line to the given point."""
+        """Find the closest point on the middle line to the given point.
+
+        Args:
+            point: The point to project.
+        """
         x, y = point
         closest_point = min(self.middle_line, key=lambda p: (p[0] - x)**2 + (p[1] - y)**2)
         return closest_point
 
     def project_to_boundary(self, point, fraction=0.5):
+        """Project the given point to the track boundary.
+
+        Args:
+            point: The point to project.
+            *fraction: The fraction of the track width to project to. Defaults to 0.5.
+        """
         mp = self.project_to_middle_line(point)
         direction = self.directions[self.i_map[tuple(mp)]]
         normal = np.array([direction[1], -direction[0]])
@@ -52,13 +84,21 @@ class RaceTrack:
         else:
             return mp - fraction * self.width/2 * normal
 
-    def distance_to_middle_line(self, point):
-        """Calculate the distance from the given point to the middle line."""
+    def distance_to_middle_line(self, point) -> float:
+        """Calculate the distance from the given point to the middle line.
+
+        Args:
+            point: The point to calculate the distance from.
+        """
         closest_point = self.project_to_middle_line(point)
         return np.linalg.norm(closest_point - np.array(point))
 
-    def get_limits(self):
-        """Get the limits of the track."""
+    def get_limits(self) -> tuple:
+        """Get the x-y-limits of the track.
+
+        Returns:
+            A tuple of the x-limits and y-limits of the track.
+        """
         m_x, m_y = zip(*self.middle_line)
         l_x, l_y = zip(*self.left_boundary)
         r_x, r_y = zip(*self.right_boundary)
@@ -77,7 +117,13 @@ class RaceTrack:
         return tuple(self.middle_line[idx,:])
 
     def plot_line_at_middle_point(self, mp, ax: plt.Axes = None, **kwargs) -> PlotObject:
-        """Add the starting line using matplotlib."""
+        """Add the starting line using matplotlib.
+
+        Args:
+            mp: The middle point to plot the line at (expected to be in the list of mid-line points)
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
         if ax == None:
             ax = plt.gca()
         try:
@@ -90,15 +136,33 @@ class RaceTrack:
             warnings.warn("Middle point not found (skipping plot.)")
 
     def plot_start_line(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
+        """Add the starting line using matplotlib.
+
+        Args:
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
         smp = self.get_start_middle_point()
         return self.plot_line_at_middle_point(smp, ax, **kwargs)
 
     def plot_finish_line(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
+        """Add the finish line using matplotlib.
+
+        Args:
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
         smp = self.get_finish_middle_point()
         return self.plot_line_at_middle_point(smp, ax, **kwargs)
 
-    def lap_progress(self, point):
-        """Calculate progress along the lap based on closest middle line segment."""
+    def lap_progress(self, point) -> float:
+        """Calculate progress along the lap based on closest middle line segment.
+
+        Args:
+            point: The point to calculate progress from.
+        Returns:
+            The progress along the lap as a fraction between 0 and 1.
+        """
         mp = self.project_to_middle_line(point)
         progress_start = self.progress_map[self.get_start_middle_point()]
         progress_end = self.progress_map[self.get_finish_middle_point()]
@@ -106,9 +170,15 @@ class RaceTrack:
         return (progress_point - progress_start) / (progress_end - progress_start)
 
     def plot_track(self, ax: plt.Axes = None, color='black') -> PlotObject:
-        """Plot the race track using matplotlib."""
-        if ax == None:
+        """Plot the race track using matplotlib.
+
+        Args:
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            *color: The color of the track. Defaults to black.
+        """
+        if ax is None:
             ax = plt.gca()
+
 
         # plot object container
         po = PlotObject()
@@ -126,7 +196,13 @@ class RaceTrack:
 
     @staticmethod
     def generate_random_track(num_points=10, width=1, y_var=1.):
-        """Generate a random race track with smooth curves."""
+        """Generate a random race track with smooth curves.
+
+        Args:
+            *num_points: The number of points to generate. Defaults to 10.
+            *width: The width of the track. Defaults to 1.
+            *y_var: The variation in the y-direction. Defaults to 1.
+        """
         x_vals = np.linspace(0, num_points, num_points)
         y_vals = np.cumsum(np.cumsum(np.random.uniform(-y_var, y_var, num_points)))  # Smooth variation
 
@@ -150,19 +226,38 @@ vehicle_colors = [
 ]
 
 class Grid:
-    def __init__(self, dx = 0.25, dy = 0.25):
+    """A class to represent a discrete grid.
+
+    Attributes:
+        dx (float): The x-spacing of the grid.
+        dy (float): The y-spacing of the grid.
+    """
+    def __init__(self, dx: float = 0.25, dy: float = 0.25):
+        """Initialize a Grid instance.
+
+        Args:
+            dx (float): The x-spacing of the grid. Defaults to 0.25.
+            dy (float): The y-spacing of the grid. Defaults to 0.25.
+        """
         self.dx = dx
         self.dy = dy
 
 class Controller:
+    """An abstract class representing a controller of a vehicle."""
     def __init__(self):
-        pass
+        """Instantiate the controller class."""
 
     def get_feasible_controls(self):
-        pass
+        """Get the feasible controls."""
 
 class DiscreteController(Controller):
+    """Implements a discrete version of a Controller class."""
     def __init__(self, **kwargs):
+        """Instantiate the DiscreteController class.
+
+        Args:
+            **grid: The grid to be used for the feasible controls. Defaults to a 3x3 grid.
+        """
         super().__init__(**kwargs)
         self.grid = kwargs.get('grid', Grid())
         self.controls = []
@@ -174,7 +269,28 @@ class DiscreteController(Controller):
         return self.controls
 
 class Vehicle:
-    def __init__(self, track=None, position=None, velocity=[0.,0.], color='black', marker='o', **kwargs):
+    """A class to represent a vehicle.
+
+    Attributes:
+        track (RaceTrack): The race track the vehicle is on.
+        position (np.array): The current position of the vehicle.
+        velocity (np.array): The current velocity of the vehicle.
+        u (np.array): The current control action.
+        color: The color of the vehicle.
+        marker: The marker style for plotting.
+        **controller (Controller): The controller for the vehicle. Defaults to DiscreteController.
+    """
+    def __init__(self, track=None, position=None, velocity=(0., 0.), color='black', marker='o', **kwargs):
+        """Initialize a Vehicle instance.
+
+        Args:
+            *track (RaceTrack): The race track.
+            *position (np.array): The initial position of the vehicle.
+            *velocity (np.array): The initial velocity of the vehicle.
+            *color: The color of the vehicle. Defaults to black.
+            *marker: The marker style for plotting. Defaults to 'o'.
+            **controller (Controller): The controller for the vehicle. Defaults to DiscreteController.
+        """
         self.track: RaceTrack = track
         if position is not None:
             self.position = np.array(position)
@@ -190,15 +306,29 @@ class Vehicle:
         self.trajectory = np.array(self.position).reshape(2,1)
 
     def check_collision(self):
+        """Check if the vehicle has collided.
+
+        Currently, only collision with track boundaries is checked.
+        If a collision is detected, the vehicle is reset.
+        """
         if self.track is None:
             return
         if not self.track.is_on_track(self.position):
             self.reset()
 
     def get_feasible_controls(self):
+        """Get the feasible control actions for the vehicle.
+
+        Gets the feasible control actions from the controller (return type depends on controller).
+        """
         return self.controller.get_feasible_controls()
 
     def reset(self):
+        """Reset the vehicle.
+
+        Velocity is set to zero and position is reset to the start position of the track. If no
+        track is assigned, the position is set to the origin. The trajectory is reset as well.
+        """
         self.velocity = np.array([0., 0.])
         if self.track is None:
             self.position = np.zeros(2)
@@ -207,6 +337,14 @@ class Vehicle:
         self.trajectory = np.array(self.position).reshape(2, 1)
 
     def update(self):
+        """Update the vehicle position based on the current control action.
+
+        Update the position and velocity of the vehicle:
+            p = p + v
+            v = v + u
+        If no control action is provided, the vehicle will continue with its current velocity.
+        The trajectory is updated with the new position and the vehicle is checked for collisions.
+        """
         if self.u is not None:
             self.velocity += np.array(self.u)
         self.position += self.velocity
@@ -214,7 +352,22 @@ class Vehicle:
         self.check_collision()
 
 class Race:
+    """A class to represent a race with multiple vehicles.
+
+    Attributes:
+        track (RaceTrack): The race track.
+        vehicles (List[Vehicle]): The list of vehicles.
+        cv_idx (int): The index of the current controllable vehicle.
+    """
     def __init__(self, **kwargs):
+        """Initialize a Race instance.
+
+        Args:
+            **track (RaceTrack): The race track. Defaults to a randomly generated track.
+            **n_vehicles (int): The number of vehicles. Defaults to 1. Will be ignored if vehicles
+                                is provided.
+            **vehicles (List[Vehicle]): The list of vehicles. Defaults to a single vehicle.
+        """
         self.track: RaceTrack = kwargs.get('track', RaceTrack.generate_random_track(y_var=1))
         self.grid = kwargs.get('grid', Grid())
 
@@ -227,14 +380,21 @@ class Race:
             self.n_vehicles = len(self.vehicles)
         self.cv_idx = 0
 
-    def set_track(self, track):
+    def set_track(self, track: RaceTrack):
+        """Assign a track instance.
+
+        Args:
+            track (RaceTrack): The track instance to assign.
+        """
         self.track = track
         for v in self.vehicles:
             v.track = track
 
     def get_cv(self):
+        """Get the current controllable vehicle."""
         return self.vehicles[self.cv_idx]
 
     def next_cv(self):
+        """Get the next controllable vehicle."""
         self.cv_idx = (self.cv_idx + 1) % len(self.vehicles)
         return self.get_cv()

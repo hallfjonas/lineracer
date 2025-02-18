@@ -26,7 +26,7 @@ def test_race():
             if v1 != v2:
                 assert v1.color != v2.color
                 assert v1.track == v2.track
-    
+
     new_track = RaceTrack.generate_random_track()
     race.set_track(new_track)
     assert isinstance(race.track, RaceTrack)
@@ -59,7 +59,7 @@ def test_reset():
     v.reset()
     assert np.allclose(v.position, np.array([0., 0.]))
     assert np.allclose(v.velocity, np.array([0., 0.]))
-    
+
 def test_controller():
     c = DiscreteController()
     assert len(c.get_feasible_controls()) > 0
