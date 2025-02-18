@@ -9,7 +9,7 @@ from lineracer.Race import *
 from lineracer.PlotObjects import *
 
 class App:
-    def __init__(self):           
+    def __init__(self):
         self.root = tkinter.Tk()
         self.root.wm_title("Embedding in Tk")
 
@@ -17,11 +17,11 @@ class App:
         self.fig.tight_layout()
         self.ax.set_aspect('equal')
         self.ax.set_axis_off()
-    
+
         # tool tip to update control
         self.predicted: PlotObject = PlotObject(self.ax.plot([], [], '-', alpha=0.8))
         self.predicted_uncontrolled: PlotObject = PlotObject(self.ax.plot([], [], '--', alpha=1.0))
-        
+
         # generate canvas
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.draw()
@@ -42,22 +42,22 @@ class App:
     def initialize_race(self):
         self.race = Race(n_vehicles=2)
         self.vehicle_plot_data = {}
-        for v in self.race.vehicles: 
+        for v in self.race.vehicles:
             vpd = self.vehicle_plot_data[v] = {}
             vpd['progress'] = tkinter.Label(self.root,text='Progress: 0%',fg=v.color)
             vpd['progress'].pack(fill=tkinter.BOTH)
         self.reset_racetrack()
-        
+
     def reset_racetrack(self):
         if self.track_plot is not None:
             self.track_plot.remove()
-            for v in self.race.vehicles: 
+            for v in self.race.vehicles:
                 vpd = self.vehicle_plot_data[v]
                 if 'pos' in vpd and vpd['pos'] is not None:
                     vpd['pos'].remove()
                     vpd['hp'].remove()
 
-        # regenerate and plot track 
+        # regenerate and plot track
         self.race.set_track(RaceTrack.generate_random_track())
         self.track_plot: PlotObject = self.race.track.plot_track(ax=self.ax)
         lims = self.race.track.get_limits()
@@ -65,13 +65,13 @@ class App:
         self.ax.set_ylim(lims[1])
 
         # reset the vehicles
-        for v in self.race.vehicles: 
+        for v in self.race.vehicles:
             v.reset()
             vpd = self.vehicle_plot_data[v]
             vpd['pos'] = PlotObject(self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color))
-            vpd['hp'] = PlotObject(self.ax.plot(v.position[0], v.position[1], '-', color=v.color))
-            vpd['x_history'] = [v.position[0]]
-            vpd['y_history'] = [v.position[1]]
+            vpd['hp'] = PlotObject(self.ax.plot(v.trajectory[0, :], v.trajectory[1, :], '-', color=v.color))
+            vpd['progress'].config(text=f"Progress: {round(v.track.lap_progress(v.position)*100)}%")
+
 
         self.predicted.first().set_data([], [])
         self.predicted_uncontrolled.first().set_data([], [])
@@ -98,9 +98,7 @@ class App:
             cv.update()
             vpd = self.vehicle_plot_data[cv]
             vpd['pos'].first().set_data([cv.position[0]], [cv.position[1]])
-            vpd['x_history'].append(cv.position[0])
-            vpd['y_history'].append(cv.position[1])
-            vpd['hp'].first().set_data(self.vehicle_plot_data[cv]['x_history'], self.vehicle_plot_data[cv]['y_history'])
+            vpd['hp'].first().set_data(cv.trajectory[0,:], cv.trajectory[1,:])
             vpd['progress'].config(text=f"Progress: {round(cv.track.lap_progress(cv.position)*100)}%")
             self.canvas.draw()
             cv.u = None
@@ -128,4 +126,3 @@ class App:
 if __name__ == '__main__':
     app = App()
     tkinter.mainloop()
-    
