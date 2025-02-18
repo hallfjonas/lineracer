@@ -52,7 +52,7 @@ class RaceTrack:
             point: The point to check.
         """
         return self.distance_to_middle_line(point) <= self.width / 2
-    
+
     def project_to_middle_line(self, point):
         """Find the closest point on the middle line to the given point.
 
@@ -62,7 +62,7 @@ class RaceTrack:
         x, y = point
         closest_point = min(self.middle_line, key=lambda p: (p[0] - x)**2 + (p[1] - y)**2)
         return closest_point
-    
+
     def project_to_boundary(self, point, fraction=0.5):
         """Project the given point to the track boundary.
 
@@ -110,7 +110,7 @@ class RaceTrack:
         """
         mp = self.project_to_middle_line(point)
         return self.progress_map[tuple(mp)]
-    
+
     def plot_track(self, ax: plt.Axes = None, color='black'):
         """Plot the race track using matplotlib.
 
@@ -118,8 +118,9 @@ class RaceTrack:
             *ax: The matplotlib axes to plot on. Defaults to the current axes.
             *color: The color of the track. Defaults to black.
         """
+        if ax is None:
             ax = plt.gca()
-        
+
         # fill between boundaries
         return ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
                 np.concatenate([self.left_boundary[:,1], self.right_boundary[::-1,1]]),
@@ -136,7 +137,7 @@ class RaceTrack:
         """
         x_vals = np.linspace(0, num_points, num_points)
         y_vals = np.cumsum(np.cumsum(np.random.uniform(-y_var, y_var, num_points)))  # Smooth variation
-        
+
         middle_line = list(zip(x_vals, y_vals))
 
         # smoothen middle line
@@ -153,7 +154,7 @@ class RaceTrack:
         return RaceTrack(middle_line, np.array(left_boundary), np.array(right_boundary), start_middle_point, width)
 
 vehicle_colors = [
-    '#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628', 
+    '#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628',
     '#984ea3', '#999999', '#e41a1c', '#dede00'
 ]
 
@@ -299,7 +300,7 @@ class Race:
         """
         self.track: RaceTrack = kwargs.get('track', RaceTrack.generate_random_track(y_var=1))
         self.grid = kwargs.get('grid', Grid())
-        
+
 
         self.vehicles = kwargs.get('vehicles', None)
         if self.vehicles is None:
@@ -322,7 +323,7 @@ class Race:
     def get_cv(self):
         """Get the current controllable vehicle."""
         return self.vehicles[self.cv_idx]
-    
+
     def next_cv(self):
         """Get the next controllable vehicle."""
         self.cv_idx = (self.cv_idx + 1) % len(self.vehicles)
