@@ -1,7 +1,12 @@
+
+# external imports
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 import warnings
+
+# internal imports
+from lineracer.PlotObjects import *
 
 def smooth_line(points):
         x, y = zip(*points)
@@ -71,7 +76,7 @@ class RaceTrack:
         idx = int(9 * len(self.middle_line) / 10)
         return tuple(self.middle_line[idx,:])
 
-    def plot_line_at_middle_point(self, mp, ax: plt.Axes = None, **kwargs):
+    def plot_line_at_middle_point(self, mp, ax: plt.Axes = None, **kwargs) -> PlotObject:
         """Add the starting line using matplotlib."""
         if ax == None:
             ax = plt.gca()
@@ -80,15 +85,15 @@ class RaceTrack:
             normal = np.array([s_dir[1], -s_dir[0]])
             start_left = mp - self.width/2 * normal
             start_right = mp + self.width/2 * normal
-            return ax.plot([start_left[0], start_right[0]], [start_left[1], start_right[1]], **kwargs)
+            return PlotObject(ax.plot([start_left[0], start_right[0]], [start_left[1], start_right[1]], **kwargs))
         except:
             warnings.warn("Middle point not found (skipping plot.)")
 
-    def plot_start_line(self, ax: plt.Axes = None, **kwargs):
+    def plot_start_line(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
         smp = self.get_start_middle_point()
         return self.plot_line_at_middle_point(smp, ax, **kwargs)
 
-    def plot_finish_line(self, ax: plt.Axes = None, **kwargs):
+    def plot_finish_line(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
         smp = self.get_finish_middle_point()
         return self.plot_line_at_middle_point(smp, ax, **kwargs)
 
@@ -100,19 +105,24 @@ class RaceTrack:
         progress_point = self.progress_map[tuple(mp)]
         return (progress_point - progress_start) / (progress_end - progress_start)
 
-    def plot_track(self, ax: plt.Axes = None, color='black'):
+    def plot_track(self, ax: plt.Axes = None, color='black') -> PlotObject:
         """Plot the race track using matplotlib."""
         if ax == None:
             ax = plt.gca()
 
+        # plot object container
+        po = PlotObject()
+
         # plot start and finish lines
-        self.plot_start_line(ax, color='white')
-        self.plot_finish_line(ax, color='white')
+        po.add(self.plot_start_line(ax, color='white'))
+        po.add(self.plot_finish_line(ax, color='white'))
 
         # fill between boundaries
-        return ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
+        po.add(ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
                 np.concatenate([self.left_boundary[:,1], self.right_boundary[::-1,1]]),
-                color=color)
+                color=color))
+
+        return po
 
     @staticmethod
     def generate_random_track(num_points=10, width=1, y_var=1.):
