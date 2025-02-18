@@ -41,6 +41,8 @@ class App:
         self.vehicle_plot_data = {}
         for v in self.race.vehicles:
             vpd = self.vehicle_plot_data[v] = {}
+            vpd['pos'] = self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color)[0]
+            vpd['hp'] = self.ax.plot(v.trajectory[0, :], v.trajectory[1, :], '-', color=v.color)[0]
             vpd['progress'] = tkinter.Label(self.root,text='Progress: 0%',fg=v.color)
             vpd['progress'].pack(fill=tkinter.BOTH)
         self.reset_racetrack()
@@ -65,10 +67,8 @@ class App:
         for v in self.race.vehicles:
             v.reset()
             vpd = self.vehicle_plot_data[v]
-            vpd['pos'] = self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color)[0]
-            vpd['hp'] = self.ax.plot(v.position[0], v.position[1], '-', color=v.color)[0]
-            vpd['x_history'] = [v.position[0]]
-            vpd['y_history'] = [v.position[1]]
+            vpd['pos'].set_data([v.position[0]], [v.position[1]])
+            vpd['hp'].set_data(v.trajectory[0, :], v.trajectory[1, :])
             vpd['progress'].config(text=f"Progress: {round(v.track.lap_progress(v.position)*100)}%")
 
         self.predicted.set_data([], [])
@@ -95,9 +95,7 @@ class App:
             cv.update()
             vpd = self.vehicle_plot_data[cv]
             vpd['pos'].set_data([cv.position[0]], [cv.position[1]])
-            vpd['x_history'].append(cv.position[0])
-            vpd['y_history'].append(cv.position[1])
-            vpd['hp'].set_data(self.vehicle_plot_data[cv]['x_history'], self.vehicle_plot_data[cv]['y_history'])
+            vpd['hp'].set_data(cv.trajectory[0,:], cv.trajectory[1,:])
             vpd['progress'].config(text=f"Progress: {round(cv.track.lap_progress(cv.position)*100)}%")
             self.canvas.draw()
             cv.u = None
