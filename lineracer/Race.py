@@ -10,6 +10,10 @@ def smooth_line(points):
     Args:
         points: List of (x, y) tuples defining the line.
     """
+    x, y = zip(*points)
+    x_smooth = np.linspace(min(x), max(x), 300)
+    y_spline = make_interp_spline(x, y)(x_smooth)
+    return x_smooth, y_spline
 
 class RaceTrack:
     """A class representing a race track.
