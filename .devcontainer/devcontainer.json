@@ -14,5 +14,8 @@
             ]
         }
     },
-    "postCreateCommand": "echo 'Line Racer dev container is ready!'"
+    "postCreateCommand": "flit install --symlink" // Install the package in editable mode
 }
+
+// [
+//     "echo 'Line Racer dev container is ready!'",
