@@ -6,7 +6,7 @@ import numpy as np
 from Race import *
 
 class App:
-    def __init__(self):           
+    def __init__(self):
         self.root = tkinter.Tk()
         self.root.wm_title("Embedding in Tk")
 
@@ -14,11 +14,11 @@ class App:
         self.fig.tight_layout()
         self.ax.set_aspect('equal')
         self.ax.set_axis_off()
-    
+
         # tool tip to update control
         self.predicted, = self.ax.plot([], [], '-', alpha=0.8)
         self.predicted_uncontrolled, = self.ax.plot([], [], '--', alpha=1.0)
-        
+
         # generate canvas
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.draw()
@@ -39,20 +39,24 @@ class App:
     def initialize_race(self):
         self.race = Race(n_vehicles=2)
         self.vehicle_plot_data = {}
-        for v in self.race.vehicles: 
+        for v in self.race.vehicles:
             vpd = self.vehicle_plot_data[v] = {}
             vpd['pos'] = self.ax.plot(v.position[0], v.position[1], v.marker, color=v.color)[0]
-            vpd['hp'] = self.ax.plot(v.trajectory[0,:], v.trajectory[1,:], '-', color=v.color)[0]
+            vpd['hp'] = self.ax.plot(v.trajectory[0, :], v.trajectory[1, :], '-', color=v.color)[0]
             vpd['progress'] = tkinter.Label(self.root,text='Progress: 0%',fg=v.color)
             vpd['progress'].pack(fill=tkinter.BOTH)
-
         self.reset_racetrack()
-        
+
     def reset_racetrack(self):
         if self.track_plot is not None:
             self.track_plot.remove()
+            for v in self.race.vehicles:
+                vpd = self.vehicle_plot_data[v]
+                if 'pos' in vpd and vpd['pos'] is not None:
+                    vpd['pos'].remove()
+                    vpd['hp'].remove()
 
-        # regenerate and plot track 
+        # regenerate and plot track
         self.race.set_track(RaceTrack.generate_random_track())
         self.track_plot, = self.race.track.plot_track(ax=self.ax)
         lims = self.race.track.get_limits()
@@ -60,11 +64,12 @@ class App:
         self.ax.set_ylim(lims[1])
 
         # reset the vehicles
-        for v in self.race.vehicles: 
+        for v in self.race.vehicles:
             v.reset()
             vpd = self.vehicle_plot_data[v]
             vpd['pos'].set_data([v.position[0]], [v.position[1]])
             vpd['hp'].set_data(v.trajectory[0,:], v.trajectory[1,:])
+
         self.predicted.set_data([], [])
         self.canvas.draw()
 
@@ -117,4 +122,3 @@ class App:
 if __name__ == '__main__':
     app = App()
     tkinter.mainloop()
-    
