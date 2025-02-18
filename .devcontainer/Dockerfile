@@ -1,6 +1,9 @@
 # Use Ubuntu 24.04 LTS as the base image
-FROM ubuntu:24.04
+FROM ubuntu:20.04
 LABEL maintainer="emilcode"
+
+# Set DEBIAN_FRONTEND to noninteractive to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Update the package list and install dev tools
 RUN apt-get update && \
@@ -8,9 +11,9 @@ RUN apt-get update && \
     python3 \
     python3-pip \
     git \
-    build-essential \
-    gdb \
-    cmake
+    python3-tk \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install python packages
-RUN pip3 install numpy --break-system-packages
+# Install python packages listed in the requirements.txt
+RUN --mount=type=bind,source=requirements.txt,target=/tmp/requirements.txt \
+    pip3 install --no-cache-dir -r /tmp/requirements.txt
