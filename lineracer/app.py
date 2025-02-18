@@ -6,8 +6,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
 # internal imports
-from lineracer.Race import *
-from lineracer.PlotObjects import *
+from Race import *
+from PlotObjects import *
 
 class App:
     def __init__(self):
