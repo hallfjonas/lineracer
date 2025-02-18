@@ -7,7 +7,7 @@ from scipy.interpolate import make_interp_spline
 import warnings
 
 # internal imports
-from PlotObjects import *
+from lineracer.PlotObjects import *
 
 def smooth_line(points):
     """Smooth a line using interpolation.
