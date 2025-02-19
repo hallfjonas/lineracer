@@ -2,7 +2,8 @@
 import pytest
 
 # internal imports
-from lineracer import *
+from lineracer.Race import *
+from lineracer.PlotObjects import *
 
 def test_track():
     track = RaceTrack.generate_random_track()
