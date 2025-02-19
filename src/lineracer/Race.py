@@ -369,8 +369,6 @@ class Race:
             **vehicles (List[Vehicle]): The list of vehicles. Defaults to a single vehicle.
         """
         self.track: RaceTrack = kwargs.get('track', RaceTrack.generate_random_track(y_var=1))
-        self.grid = kwargs.get('grid', Grid())
-
 
         self.vehicles = kwargs.get('vehicles', None)
         if self.vehicles is None:
