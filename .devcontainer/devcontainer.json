@@ -14,11 +14,5 @@
             ]
         }
     },
-    "containerEnv": {
-        "FLIT_ROOT_INSTALL": "1"
-    },
-    "postCreateCommand": "pip install flit && flit install --symlink" // Install the package in editable mode
+    "postCreateCommand": "flit install --symlink --deps=all && echo 'Line Racer dev container is ready!'"
 }
-
-// [
-//     "echo 'Line Racer dev container is ready!'",
