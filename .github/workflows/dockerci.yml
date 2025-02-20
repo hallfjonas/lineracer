@@ -19,6 +19,6 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/app -w /app lineracer-image /bin/sh -c "
           flit install --deps=all &&
-          python3 list &&
+          python3 -m pip list &&
           python3 -m pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html"
 
