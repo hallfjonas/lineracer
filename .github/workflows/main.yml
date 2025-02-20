@@ -1,0 +1,22 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build Docker Image
+        run: |
+          docker build -t lineracer-image -f .devcontainer/Dockerfile .
+      - name: Run Tests Inside Container
+        run: |
+          docker run --rm lineracer-image /bin/sh -c "
+          flit install --deps=all &&
+          python3 -m pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html"
