@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 import warnings
+import math
 
 # internal imports
 from lineracer.PlotObjects import *
@@ -58,6 +59,23 @@ class RaceTrack:
             point: The point to check.
         """
         return self.distance_to_middle_line(point) <= self.width / 2
+
+    def get_start_point(self, starting_grid_index: int) -> tuple:
+        """Get the starting point of the track.
+
+        Similar to F1 starting grid: two vehicles per row, but on same progress line.
+
+        Args:
+            position: The position along the track to get the starting point from.
+        """
+        mlp = self.get_start_middle_point()
+        mlp_idx = self.i_map[tuple(mlp)]
+        dir_normalized = self.directions[mlp_idx] / np.linalg.norm(self.directions[mlp_idx])
+        normal = np.array([dir_normalized[1], -dir_normalized[0]])
+        dx = 0.25 * self.width
+        sign = 1 if starting_grid_index % 2 == 0 else -1
+        dy = dx * math.floor(starting_grid_index/2)
+        return mlp + sign * dx * normal - dy * dir_normalized
 
     def project_to_middle_line(self, point):
         """Find the closest point on the middle line to the given point.
@@ -278,7 +296,8 @@ class Vehicle:
         u (np.array): The current control action.
         color: The color of the vehicle.
         marker: The marker style for plotting.
-        **controller (Controller): The controller for the vehicle. Defaults to DiscreteController.
+        controller (Controller): The controller for the vehicle. Defaults to DiscreteController.
+        starting_grid_index (int): The starting grid of the vehicle
     """
     def __init__(self, track=None, position=None, velocity=(0., 0.), color='black', marker='o', **kwargs):
         """Initialize a Vehicle instance.
@@ -290,14 +309,14 @@ class Vehicle:
             *color: The color of the vehicle. Defaults to black.
             *marker: The marker style for plotting. Defaults to 'o'.
             **controller (Controller): The controller for the vehicle. Defaults to DiscreteController.
+            **starting_grid_index (int): The starting grid of the vehicle. Defaults to 0.
         """
         self.track: RaceTrack = track
+        self.starting_grid_index = kwargs.get('starting_grid_index', 0)
         if position is not None:
             self.position = np.array(position)
-        elif self.track is not None:
-            self.position = np.array(self.track.get_start_middle_point())
         else:
-            self.position = np.zeros(2)
+            self.position = self.get_start_point()
         self.velocity = np.array(velocity)
         self.u = None
         self.color = color
@@ -323,6 +342,16 @@ class Vehicle:
         """
         return self.controller.get_feasible_controls()
 
+    def get_start_point(self):
+        """Get the starting point of the vehicle.
+
+        If no track is assigned, the starting point is the origin. Otherwise, we get the starting
+        point from the track based on our starting grid index.
+        """
+        if self.track is None:
+            return np.zeros(2)
+        return self.track.get_start_point(self.starting_grid_index)
+
     def reset(self):
         """Reset the vehicle.
 
@@ -330,10 +359,7 @@ class Vehicle:
         track is assigned, the position is set to the origin. The trajectory is reset as well.
         """
         self.velocity = np.array([0., 0.])
-        if self.track is None:
-            self.position = np.zeros(2)
-        else:
-            self.position = np.array(self.track.get_start_middle_point())
+        self.position = self.get_start_point()
         self.trajectory = np.array(self.position).reshape(2, 1)
 
     def update(self):
@@ -375,7 +401,7 @@ class Race:
         self.vehicles = kwargs.get('vehicles', None)
         if self.vehicles is None:
             self.n_vehicles = kwargs.get('n_vehicles', 1)
-            self.vehicles = [Vehicle(self.track, color=vehicle_colors[i]) for i in range(self.n_vehicles)]
+            self.vehicles = [Vehicle(self.track, color=vehicle_colors[i], starting_grid_index=i) for i in range(self.n_vehicles)]
         else:
             self.n_vehicles = len(self.vehicles)
         self.cv_idx = 0
