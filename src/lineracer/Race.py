@@ -276,7 +276,7 @@ class DiscreteController(Controller):
         Args:
             **grid: The grid to be used for the feasible controls. Defaults to a 3x3 grid.
         """
-        super().__init__(**kwargs)
+        super().__init__()
         self.grid = kwargs.get('grid', Grid())
         self.controls = []
         for i in [-1,0,1]:
