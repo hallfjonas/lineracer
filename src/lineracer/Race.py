@@ -299,30 +299,43 @@ class Vehicle:
         controller (Controller): The controller for the vehicle. Defaults to DiscreteController.
         starting_grid_index (int): The starting grid of the vehicle
     """
-    def __init__(self, track=None, position=None, velocity=(0., 0.), color='black', marker='o', **kwargs):
+    def __init__(self, track = None, position=None, velocity=(0., 0.), marker='o', **kwargs):
         """Initialize a Vehicle instance.
 
         Args:
             *track (RaceTrack): The race track.
             *position (np.array): The initial position of the vehicle.
             *velocity (np.array): The initial velocity of the vehicle.
-            *color: The color of the vehicle. Defaults to black.
             *marker: The marker style for plotting. Defaults to 'o'.
             **controller (Controller): The controller for the vehicle. Defaults to DiscreteController.
             **starting_grid_index (int): The starting grid of the vehicle. Defaults to 0.
+            **color: The color of the vehicle. Defaults to a color based on the starting grid.
+            **is_player (bool): Whether the vehicle is controlled by the player. Defaults to True.
         """
         self.track: RaceTrack = track
         self.starting_grid_index = kwargs.get('starting_grid_index', 0)
+        self.is_player = kwargs.get('is_player', False)
         if position is not None:
             self.position = np.array(position)
         else:
             self.position = self.get_start_point()
         self.velocity = np.array(velocity)
-        self.u = None
-        self.color = color
+        self.color: str = kwargs.get('color', vehicle_colors[self.starting_grid_index])
         self.marker = marker
-        self.controller: Controller = kwargs.get('controller', DiscreteController())
+        self.controller: Controller = kwargs.get('controller', None)
+        if self.controller is None:
+            self.controller = DiscreteController(track=self.track)
+
         self.trajectory = np.array(self.position).reshape(2,1)
+
+    def set_track(self, track):
+        """Assign a track instance.
+
+        Args:
+            track (RaceTrack): The track instance to assign.
+        """
+        self.track = track
+        self.controller.set_track(track)
 
     def check_collision(self):
         """Check if the vehicle has collided.
@@ -371,8 +384,10 @@ class Vehicle:
         If no control action is provided, the vehicle will continue with its current velocity.
         The trajectory is updated with the new position and the vehicle is checked for collisions.
         """
-        if self.u is not None:
-            self.velocity += np.array(self.u)
+        if self.controller.u is not None:
+            self.velocity += np.array(self.controller.u)
+        else:
+            warnings.warn("No control action provided. Vehicle will continue with current velocity.")
         self.position += self.velocity
         self.trajectory = np.hstack([self.trajectory, self.position.reshape(2,1)])
         self.check_collision()
@@ -390,18 +405,22 @@ class Race:
 
         Args:
             **track (RaceTrack): The race track. Defaults to a randomly generated track.
-            **n_vehicles (int): The number of vehicles. Defaults to 1. Will be ignored if vehicles
-                                is provided.
-            **vehicles (List[Vehicle]): The list of vehicles. Defaults to a single vehicle.
+            **n_player (int): The number of players. Defaults to 1.
+            **n_npc (int): The number of non-player vehicles. Defaults to 1.
+            **vehicles (List[Vehicle]): The list of vehicles.
         """
         self.track: RaceTrack = kwargs.get('track', RaceTrack.generate_random_track(y_var=1))
 
-        self.vehicles = kwargs.get('vehicles', None)
-        if self.vehicles is None:
-            self.n_vehicles = kwargs.get('n_vehicles', 1)
-            self.vehicles = [Vehicle(self.track, color=vehicle_colors[i], starting_grid_index=i) for i in range(self.n_vehicles)]
-        else:
-            self.n_vehicles = len(self.vehicles)
+        self.vehicles: List[Vehicle] = kwargs.get('vehicles', [])
+        if len(self.vehicles) == 0:
+            self.n_player = kwargs.get('n_player', 1)
+            self.n_npc = kwargs.get('n_npc', 1)
+            for i in range(self.n_player):
+                self.vehicles.append(Vehicle(track=self.track, starting_grid_index=i, is_player=True))
+            for i in range(self.n_npc):
+                idx = i + self.n_player
+                self.vehicles.append(Vehicle(track=self.track, starting_grid_index=idx, is_player=False))
+        self.n_vehicles = len(self.vehicles)
         self.cv_idx = 0
 
     def set_track(self, track: RaceTrack):
@@ -412,13 +431,13 @@ class Race:
         """
         self.track = track
         for v in self.vehicles:
-            v.track = track
+            v.set_track(track)
 
     def get_cv(self):
-        """Get the current controllable vehicle."""
+        """Get the current vehicle."""
         return self.vehicles[self.cv_idx]
 
     def next_cv(self):
-        """Get the next controllable vehicle."""
+        """Get the next vehicle."""
         self.cv_idx = (self.cv_idx + 1) % len(self.vehicles)
         return self.get_cv()
