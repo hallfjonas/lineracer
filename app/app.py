@@ -3,11 +3,13 @@
 # external imports
 import tkinter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 import numpy as np
 
 # internal imports
-from lineracer.Race import *
-from lineracer.PlotObjects import *
+from lineracer.Race import Race
+from lineracer.RaceTrack import RaceTrack
+from lineracer.PlotObjects import PlotObject
 
 class App:
     def __init__(self):
@@ -42,7 +44,7 @@ class App:
 
     def initialize_race(self):
         """Initialize the race."""
-        self.race = Race(n_vehicles=2)
+        self.race = Race()
         self.vehicle_plot_data = {}
         for v in self.race.vehicles:
             vpd = self.vehicle_plot_data[v] = {}
@@ -90,13 +92,21 @@ class App:
         next_p = cv.position + cv.velocity
         # find the feasible control action that leads to the closest point to the mouse
         min_dist = np.inf
-        cv.u = None
         for control in cv.get_feasible_controls():
             p = next_p + control
             dist = np.linalg.norm(np.array(p) - np.array([event.xdata, event.ydata]))
             if dist < min_dist:
                 min_dist = dist
-                cv.u = control
+                cv.controller.set_control(control)
+
+    def update_vehicle(self, vehicle):
+        vehicle.update()
+        vpd = self.vehicle_plot_data[vehicle]
+        vpd['pos'].first().set_data([vehicle.position[0]], [vehicle.position[1]])
+        vpd['hp'].first().set_data(vehicle.trajectory[0,:], vehicle.trajectory[1,:])
+        progress = round(vehicle.track.lap_progress(vehicle.position)*100)
+        vpd['progress'].config(text=f"Progress: {progress}%")
+        self.canvas.draw()
 
     def on_mouse_release(self, event):
         """Update vehicle based on the current control action.
@@ -106,21 +116,26 @@ class App:
         """
         if event.xdata is None:
             return
-        cv = self.race.get_cv()
-        if cv.u is not None:
-            cv.update()
-            vpd = self.vehicle_plot_data[cv]
-            vpd['pos'].first().set_data([cv.position[0]], [cv.position[1]])
-            vpd['hp'].first().set_data(cv.trajectory[0,:], cv.trajectory[1,:])
-            vpd['progress'].config(text=f"Progress: {round(cv.track.lap_progress(cv.position)*100)}%")
-            self.canvas.draw()
-            cv.u = None
+
+        # handle current player vehicle
+        self.update_vehicle(self.race.get_cv())
+
+        # handle all NPC vehicles until we reach the next player vehicle
+        while True:
             new_cv = self.race.next_cv()
-            np = new_cv.position
-            npu = new_cv.position + new_cv.velocity
-            self.predicted_uncontrolled.first().set_data([np[0], npu[0]], [np[1], npu[1]])
-            self.predicted_uncontrolled.first().set_color(new_cv.color)
-            self.canvas.draw()
+            if new_cv.is_player:
+                break
+
+            # otherwise update NPC action
+            new_cv.controller.compute_control(new_cv.position, new_cv.velocity)
+            self.update_vehicle(new_cv)
+
+        # update the predicted uncontrolled vehicle
+        np = new_cv.position
+        npu = new_cv.position + new_cv.velocity
+        self.predicted_uncontrolled.first().set_data([np[0], npu[0]], [np[1], npu[1]])
+        self.predicted_uncontrolled.first().set_color(new_cv.color)
+        self.canvas.draw()
 
     def on_mouse_hover(self, event):
         """Update the current vehicle control action based on the mouse position.
@@ -132,7 +147,7 @@ class App:
             return
         cv = self.race.get_cv()
         self.update_control(event)
-        next_p = cv.position + cv.velocity + cv.u
+        next_p = cv.position + cv.velocity + cv.controller.get_control()
         self.predicted.first().set_data([cv.position[0], next_p[0]], [cv.position[1], next_p[1]])
         self.predicted.first().set_color(cv.color)
         self.canvas.draw()
