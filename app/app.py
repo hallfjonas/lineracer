@@ -3,11 +3,13 @@
 # external imports
 import tkinter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 import numpy as np
 
 # internal imports
-from lineracer.Race import *
-from lineracer.PlotObjects import *
+from lineracer.Race import Race
+from lineracer.RaceTrack import RaceTrack
+from lineracer.PlotObjects import PlotObject
 
 class App:
     def __init__(self):
