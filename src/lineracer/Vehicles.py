@@ -46,6 +46,10 @@ class Vehicle:
         else:
             self.position = self.get_start_point()
         self.velocity = np.array(velocity)
+
+        if track is not None:
+            self.mid_line_point = self.track.get_start_middle_point()
+
         self.color: str = kwargs.get('color', vehicle_colors[self.starting_grid_index])
         self.marker = marker
         self.controller: Controller = kwargs.get('controller', None)
@@ -100,6 +104,9 @@ class Vehicle:
         self.velocity = np.array([0., 0.])
         self.position = self.get_start_point()
         self.trajectory = np.array(self.position).reshape(2, 1)
+
+        if self.track is not None:
+            self.mid_line_point = self.track.get_start_middle_point()
 
     def update(self):
         """Update the vehicle position based on the current control action.
