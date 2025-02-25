@@ -15,8 +15,11 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))  # Source code dir relative to this file
 
 extensions = [
-    'sphinx.ext.autodoc',  # Core library for html generation from docstrings
-    'sphinx.ext.autosummary',  # Create neat summary tables
+    'sphinx.ext.autodoc',       # Core library for html generation from docstrings
+    'sphinx.ext.autosummary',   # Create neat summary tables
+    'sphinx.ext.napoleon',      # Support for NumPy and Google style docstrings
+    'sphinx.ext.viewcode',      # Add a link to the Python source code for classes, functions etc.
+
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 

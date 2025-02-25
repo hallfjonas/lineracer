@@ -74,15 +74,17 @@ class Vehicle:
         If no previous position is passed, then we check if the current position is on the track.
         Otherwise, we check if the vehicle has collided while moving from the previous position to
         the current position by checking points along the path.
+
         Args:
             previous_position: The previous position of the vehicle. Defaults to None.
             grid_test_size: The size of the grid to test along the path. Defaults to 0.1.
+
         Returns:
             bool: True if the vehicle has collided, False otherwise.
             tuple: The mid-line point verifying that the last point is on the track. None, if the
-                test fails.
-        """
+            test fails.
 
+        """
         if self.track is None:
             return False, None
 
@@ -134,12 +136,9 @@ class Vehicle:
     def update(self):
         """Update the vehicle position based on the current control action.
 
-        Update the position and velocity of the vehicle:
-            p = p + v
-            v = v + u
-        If no control action is provided, the vehicle will continue with its current velocity.
-        The trajectory is updated with the new position. If the vehicle has collided during the
-        update, we reset the vehicle.
+        Update the position and velocity of the vehicle. If no control action is provided, the
+        vehicle will continue with its current velocity. The trajectory is updated with the new
+        position. If the vehicle has collided during the update, we reset the vehicle.
         """
         if self.controller.u is not None:
             self.velocity += np.array(self.controller.u)
