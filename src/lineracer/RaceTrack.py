@@ -92,14 +92,10 @@ class RaceTrack:
 
         Args:
             middle_line: List of (x, y) tuples defining the middle line.
-            left_boundary: List of (x, y) tuples defining the left boundary.
-            right_boundary: List of (x, y) tuples defining the right boundary.
-            width: Width of the track.
-        """
-        self.middle_line = middle_line
-        self.left_boundary = left_boundary
-        self.right_boundary = right_boundary
-        self.directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
+
+    def assign_directions(self):
+        """Assign the normalized direction vector at each middle point of the track segments."""
+        self.directions = [mp - self.middle_line[i-1,:] for i,mp in enumerate(self.middle_line)]
         for i in range(len(self.directions)):
             self.directions[i] /= np.linalg.norm(self.directions[i])
 
