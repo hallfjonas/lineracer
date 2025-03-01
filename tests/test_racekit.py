@@ -1,6 +1,7 @@
 
 import pytest
 import numpy as np
+import matplotlib.pyplot as plt
 
 # internal imports
 from lineracer.Race import Race
@@ -122,3 +123,22 @@ def test_collisions():
     collided, mp = v.check_collision()
     assert collided
     assert not np.allclose(v.position, track.get_start_point(v.starting_grid_index))
+
+def test_plot_racetrack():
+    track = RaceTrack.generate_random_track(
+        x_max = 20,
+        y_max = 9,
+    )
+
+    fig, ax = plt.subplots()
+    track.plot_curvature()
+    ax.set_yscale('log')
+
+    fig, ax = plt.subplots()
+    track.plot_track(ax)
+    ax.set_aspect('equal')
+
+    fig, ax = plt.subplots()
+    track.plot_directions(ax, alpha=0.1)
+    plt.show()
+
