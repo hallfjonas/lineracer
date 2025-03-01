@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 import warnings
 import math
+from typing import Tuple
 
 # internal imports
 from lineracer.PlotObjects import PlotObject
@@ -105,13 +106,62 @@ class RaceTrack:
         self.progress_map = {tuple(point): i / len(middle_line) for i, point in enumerate(middle_line)}
         self.i_map = {tuple(point): i for i, point in enumerate(middle_line)}
 
-    def is_on_track(self, point) -> bool:
+    def on_track(self, point) -> bool:
         """Check if a given point lies within the track boundaries.
 
         Args:
             point: The point to check.
         """
         return self.distance_to_middle_line(point) <= self.width / 2
+
+    def on_track_after(self, point, middle_line_point: tuple) -> Tuple[bool, tuple]:
+        """Check if a point is on the track after a given mid-line point.
+
+        The advantage of this method is that it provides a quick check if we roughly know where it
+        is on the track. This is particularly useful if we want to check if a vehicle remains on the
+        track when moving from one point to the next.
+        Args:
+            point: The point to check.
+            middle_line_point: The first mid-line point to check from.
+        Returns:
+            tuple:
+            - bool: True iff the point is on the track after the given mid-line point
+            - tuple: The first mid-line point verifying that the point was on track.
+        """
+        idx = self.i_map[tuple(middle_line_point)]
+        for i in range(idx, len(self.middle_line) - 1):
+            if np.linalg.norm(self.middle_line[i] - np.array(point)) <= 0.5 * self.width:
+                return True, self.middle_line[i]
+        return False, None
+
+    def line_on_track(self, point1, point2, mp = None, grid_test_size=0.1) -> Tuple[bool, tuple]:
+        """Check if a line segment lies within the track boundaries.
+
+        Args:
+            point1: The starting point of the line segment (assumed to be of lower progress).
+            point2: The ending point of the line segment  (assumed to be of larger progress).
+            mp: The middle line point to check from. Defaults to None.
+
+        Returns:
+            tuple:
+            - bool: True iff the line segment is on the track.
+            - tuple: None if test failed, otherwise the first mid-line point verifying point2.
+        """
+
+        if mp is None:
+            mp = self.project_to_middle_line(point1)
+
+        # generate a test grid based of desired size
+        nrm = np.linalg.norm(point2 - point1)
+        test_grid = np.linspace(point1, point2, int(nrm / grid_test_size))
+
+        # for each point in the grid, check if it is on the track after the previous mid-line point
+        for p in test_grid:
+            on_track, mp = self.on_track_after(p, mp)
+            if not on_track:
+                return False, None
+        on_track, mp = self.on_track_after(point2, mp)
+        return on_track, mp
 
     def get_start_point(self, starting_grid_index: int) -> tuple:
         """Get the starting point of the track.
