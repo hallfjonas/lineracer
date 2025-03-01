@@ -87,11 +87,37 @@ class RaceTrack:
         progress_map: A map of middle line points to progress.
         i_map: A map of middle line points to index
     """
-    def __init__(self, middle_line, left_boundary, right_boundary, width):
+    def __init__(self, middle_line, **kwargs):
         """Initializes the race track.
 
         Args:
             middle_line: List of (x, y) tuples defining the middle line.
+            **width: The width of the track.
+            **curve_max: Maximal allowed curvature. Defaults to 1e-1.
+        """
+
+        # Processing steps:
+        # 1) Check if middle line is closed. Then copy all points (avoiding duplicates)
+        self.ensure_closed_path(middle_line)
+        self.middle_line = middle_line[:-1,:]
+        self.n = len(self.middle_line)
+
+        # 2) Check if middle line satisfies curvature constraints
+        if not self.check_curvature_constraints():
+            warnings.warn("The middle line does not satisfy curvature constraints.")
+
+        # 3) Determine the starting point and shift the middle line to start from there
+        self.shift_middle_line_to_start()
+
+        # 4) Assign the directions and boundary lines
+        self.width = kwargs.get('width', 1)
+        self.assign_directions()
+        if not self.assign_boundaries():
+            warnings.warn("The track intersects itself.")
+
+        # 5) Assign progress map and index map
+        self.progress_map = {tuple(mp): i / self.n for i, mp in enumerate(self.middle_line)}
+        self.i_map = {tuple(mp): i for i, mp in enumerate(self.middle_line)}
 
     def assign_directions(self):
         """Assign the normalized direction vector at each middle point of the track segments."""
