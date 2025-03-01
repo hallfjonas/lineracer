@@ -1,9 +1,11 @@
 """This files contains classes that implement the race back-end."""
 
 # external imports
+from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
+from python_tsp.exact import solve_tsp_dynamic_programming
 import warnings
 import math
 from typing import Tuple
@@ -445,27 +447,35 @@ class RaceTrack:
         return po
 
     @staticmethod
-    def generate_random_track(num_points=10, width=1, y_var=1.):
-        """Generate a random race track with smooth curves.
+    def generate_random_track(**kwargs) -> RaceTrack:
+        """Generate a random closed track with smooth curves."""
 
-        Args:
-            *num_points: The number of points to generate. Defaults to 10.
-            *width: The width of the track. Defaults to 1.
-            *y_var: The variation in the y-direction. Defaults to 1.
-        """
-        x_vals = np.linspace(0, num_points, num_points)
-        y_vals = np.cumsum(np.cumsum(np.random.uniform(-y_var, y_var, num_points)))  # Smooth variation
+        # Step 0) Extract settings
+        num_points = kwargs.get('num_points', 10)
+        num_eval = kwargs.get('num_eval', 1000)
+        seed = kwargs.get('seed', np.random.randint(0, 1000))
+        np.random.seed(seed)
 
-        middle_line = list(zip(x_vals, y_vals))
+        # Step 1) Draw random points
+        xvals = np.random.uniform(0, kwargs.get('x_max', num_points), num_points)
+        yvals = np.random.uniform(0, kwargs.get('y_max', num_points/2), num_points)
+        points = np.array(list(zip(xvals, yvals)))
 
-        # smoothen middle line
-        middle_x, middle_y = smooth_line(middle_line)
-        middle_y = middle_y - middle_y[0]
-        middle_line = np.array(list(zip(middle_x, middle_y)))
+        # Step 2) Compute Euclidean distances and solve TSP
+        distance_matrix = np.linalg.norm(points[:, np.newaxis] - points, axis=2)
+        indices, _ = solve_tsp_dynamic_programming(distance_matrix)
 
-        directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
-        for i in range(len(directions)):
-            directions[i] /= np.linalg.norm(directions[i])
-        left_boundary = [middle_line[i,:] + width/2 * np.array([directions[i][1], -directions[i][0]]) for i in range(len(directions))]
-        right_boundary = [middle_line[i,:] - width/2 * np.array([directions[i][1], -directions[i][0]]) for i in range(len(directions))]
-        return RaceTrack(middle_line, np.array(left_boundary), np.array(right_boundary), width)
+        # Step 3) Interpolate the points to get a smooth curve
+        # Step 3.1) Replicate the loop to avoid non-smoothness at start/end
+        loop = [p for p in points[indices]]
+        for _ in range(6):
+            loop.extend(points[indices])
+        loop.append(loop[0])
+
+        # Step 3.2) Interpolate the points to get a smooth curve
+        curve_x, curve_y = interpolate_2D(*zip(*loop), degree=3, num_eval=num_eval)
+        mid_line_x = curve_x
+        mid_line_y = curve_y
+
+        return RaceTrack(np.vstack((mid_line_x, mid_line_y)).T, **kwargs)
+
