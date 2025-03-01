@@ -102,9 +102,19 @@ class RaceTrack:
         self.directions = [middle_line[i+1,:] - middle_line[i,:] for i in range(len(middle_line) - 1)]
         for i in range(len(self.directions)):
             self.directions[i] /= np.linalg.norm(self.directions[i])
-        self.width = width
-        self.progress_map = {tuple(point): i / len(middle_line) for i, point in enumerate(middle_line)}
-        self.i_map = {tuple(point): i for i, point in enumerate(middle_line)}
+
+    def get_curvature(self, i: int) -> float:
+        """Calculate the curvature at a given middle line point.
+
+        Args:
+            i: Index of the mid-line point at which to calculate the curvature.
+        """
+        omp = self.middle_line[i-1]
+        mp = self.middle_line[i]
+        nmp = self.middle_line[(i+1)%self.n]
+        normalize = np.linalg.norm(nmp - mp) * np.linalg.norm(mp - omp)
+        return (1-np.dot(nmp - mp, mp - omp)) / normalize
+
 
     def on_track(self, point, tol=0.0) -> bool:
         """Check if a given point lies within the track boundaries.
