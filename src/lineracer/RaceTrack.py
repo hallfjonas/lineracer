@@ -320,13 +320,7 @@ class RaceTrack:
 
     def get_start_middle_point(self) -> tuple:
         """Get the intersection point between start line and mid-line."""
-        idx = int(len(self.middle_line) / 10)
-        return tuple(self.middle_line[idx,:])
-
-    def get_finish_middle_point(self) -> tuple:
-        """Get the intersection point between goal line and mid-line."""
-        idx = int(9 * len(self.middle_line) / 10)
-        return tuple(self.middle_line[idx,:])
+        return tuple(self.middle_line[0,:])
 
     def plot_line_at_middle_point(self, mp, ax: plt.Axes = None, **kwargs) -> PlotObject:
         """Add the starting line using matplotlib.
@@ -355,16 +349,6 @@ class RaceTrack:
             **kwargs: Additional keyword arguments to pass to the plot function.
         """
         smp = self.get_start_middle_point()
-        return self.plot_line_at_middle_point(smp, ax, **kwargs)
-
-    def plot_finish_line(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
-        """Add the finish line using matplotlib.
-
-        Args:
-            *ax: The matplotlib axes to plot on. Defaults to the current axes.
-            **kwargs: Additional keyword arguments to pass to the plot function.
-        """
-        smp = self.get_finish_middle_point()
         return self.plot_line_at_middle_point(smp, ax, **kwargs)
 
     def lap_progress(self, point) -> float:
@@ -425,7 +409,6 @@ class RaceTrack:
 
         # plot start and finish lines
         po.add(self.plot_start_line(ax, color='white'))
-        po.add(self.plot_finish_line(ax, color='white'))
 
         # fill between boundaries
         po.add(ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
