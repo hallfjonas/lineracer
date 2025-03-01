@@ -2,6 +2,7 @@
 # external imports
 import numpy as np
 import warnings
+from typing import Tuple
 
 # internal imports
 from lineracer.Race import RaceTrack
@@ -46,6 +47,10 @@ class Vehicle:
         else:
             self.position = self.get_start_point()
         self.velocity = np.array(velocity)
+
+        if track is not None:
+            self.mid_line_point = self.track.get_start_middle_point()
+
         self.color: str = kwargs.get('color', vehicle_colors[self.starting_grid_index])
         self.marker = marker
         self.controller: Controller = kwargs.get('controller', None)
@@ -63,16 +68,38 @@ class Vehicle:
         self.track = track
         self.controller.set_track(track)
 
-    def check_collision(self):
+    def check_collision(self, previous_position = None) -> Tuple[bool, tuple]:
         """Check if the vehicle has collided.
 
-        Currently, only collision with track boundaries is checked.
-        If a collision is detected, the vehicle is reset.
+        If no previous position is passed, then we check if the current position is on the track.
+        Otherwise, we check if the vehicle has collided while moving from the previous position to
+        the current position by checking points along the path.
+        Args:
+            previous_position: The previous position of the vehicle. Defaults to None.
+            grid_test_size: The size of the grid to test along the path. Defaults to 0.1.
+        Returns:
+            bool: True if the vehicle has collided, False otherwise.
+            tuple: The mid-line point verifying that the last point is on the track. None, if the
+                test fails.
         """
+
         if self.track is None:
-            return
-        if not self.track.is_on_track(self.position):
-            self.reset()
+            return False, None
+
+        if previous_position is None:
+            on_track, mp = self.track.on_track_after(
+                self.position,
+                middle_line_point=self.mid_line_point
+            )
+            return not on_track, mp
+
+        # project the previous position to the middle line
+        on_track, mp = self.track.line_on_track(
+            point1=previous_position,
+            point2=self.position,
+            mp=self.mid_line_point
+        )
+        return not on_track, mp
 
     def get_feasible_controls(self):
         """Get the feasible control actions for the vehicle.
@@ -101,6 +128,9 @@ class Vehicle:
         self.position = self.get_start_point()
         self.trajectory = np.array(self.position).reshape(2, 1)
 
+        if self.track is not None:
+            self.mid_line_point = self.track.get_start_middle_point()
+
     def update(self):
         """Update the vehicle position based on the current control action.
 
@@ -108,12 +138,19 @@ class Vehicle:
             p = p + v
             v = v + u
         If no control action is provided, the vehicle will continue with its current velocity.
-        The trajectory is updated with the new position and the vehicle is checked for collisions.
+        The trajectory is updated with the new position. If the vehicle has collided during the
+        update, we reset the vehicle.
         """
         if self.controller.u is not None:
             self.velocity += np.array(self.controller.u)
         else:
             warnings.warn("No control action provided. Vehicle will continue with current velocity.")
+
         self.position += self.velocity
         self.trajectory = np.hstack([self.trajectory, self.position.reshape(2,1)])
-        self.check_collision()
+
+        # check if we have collided and reset if we have
+        collided, mp = self.check_collision(previous_position=self.trajectory[:,-2])
+        self.mid_line_point = mp
+        if collided:
+            self.reset()
