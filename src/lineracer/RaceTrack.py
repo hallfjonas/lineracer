@@ -316,10 +316,38 @@ class RaceTrack:
             The progress along the lap as a fraction between 0 and 1.
         """
         mp = self.project_to_middle_line(point)
-        progress_start = self.progress_map[self.get_start_middle_point()]
-        progress_end = self.progress_map[self.get_finish_middle_point()]
-        progress_point = self.progress_map[tuple(mp)]
-        return (progress_point - progress_start) / (progress_end - progress_start)
+
+    def plot_directions(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
+        """Plot the directions of the track segments using matplotlib.
+
+        Args:
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
+        if ax == None:
+            ax = plt.gca()
+        po = PlotObject()
+        for i in self.i_map.values():
+            p = self.middle_line[i]
+            if i >= len(self.directions):
+                continue
+            po.add(ax.arrow(p[0], p[1], self.directions[i][0], self.directions[i][1], **kwargs))
+        return po
+
+    def plot_curvature(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
+        """Plot the curvature of the track segments using matplotlib.
+
+        Args:
+            *ax: The matplotlib axes to plot on. Defaults to the current axes.
+            **kwargs: Additional keyword arguments to pass to the plot function.
+        """
+        if ax == None:
+            ax = plt.gca()
+        po = PlotObject()
+        curve = [self.get_curvature(i) for i in range(self.n)]
+        t = np.linspace(0, 1, len(curve))
+        po.add(ax.plot(t, curve, **kwargs))
+        return po
 
     def plot_track(self, ax: plt.Axes = None, color='black') -> PlotObject:
         """Plot the race track using matplotlib.
