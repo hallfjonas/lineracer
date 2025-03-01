@@ -127,6 +127,19 @@ class RaceTrack:
         self.right_boundary = rb
         return not_intersects
 
+    def ensure_closed_path(self, middle_line: np.ndarray, tol=1e-2):
+        """Ensure that the middle line is a closed path.
+
+        Args:
+            middle_line: The middle line to check.
+            *tol: The tolerance to consider the start and end point being closed. Defaults to 1e-2.
+
+        Raises:
+            ValueError: If the middle line is not a closed path.
+        """
+        if np.linalg.norm(middle_line[0] - middle_line[-1]) > tol:
+            raise ValueError("The middle line must be a closed path.")
+
     def get_curvature(self, i: int) -> float:
         """Calculate the curvature at a given middle line point.
 
