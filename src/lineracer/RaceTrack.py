@@ -166,6 +166,15 @@ class RaceTrack:
                 return False
         return True
 
+    def shift_middle_line_to_start(self):
+        """Shift the middle line to start from the starting point.
+
+        The starting point is calculated as the last point of the longest straight.
+        """
+        curve = [self.get_curvature(i) for i in range(self.n)]
+        ten_percentile = np.percentile(curve, 10)
+        start, stop = self.find_longest_straight(curve_tol=ten_percentile)
+        self.middle_line = np.roll(self.middle_line, -stop, axis=0)
 
     def on_track(self, point, tol=0.0) -> bool:
         """Check if a given point lies within the track boundaries.
