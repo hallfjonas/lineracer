@@ -10,16 +10,69 @@ import math
 # internal imports
 from lineracer.PlotObjects import PlotObject
 
-def smooth_line(points):
-    """Smooth a line using interpolation.
+
+def interpolate_2D(x, y, num_eval=100, degree=3) -> tuple:
+    """Interpolate a 2D curve using splines.
+
+    Given a set of x and y coordinates, this function interpolates a 2D curve using splines.
+    If the initial point is reached multiple times, we extract a middle loop to ensure smooth
+    transitions. Otherwise, the entire curve is interpolated.
 
     Args:
-        points: List of (x, y) tuples defining the line.
+        x: The x-coordinates of the curve.
+        y: The y-coordinates of the curve.
+        *num_eval: The number of points to evaluate the curve at. Defaults to 100.
+        *degree: The degree of the spline. Defaults to 3.
+
+    Returns:
+        A tuple of the interpolated x-coordinates and y-coordinates.
+
+    Raises:
+        ValueError: If the input vectors x and y do not have the same length.
     """
-    x, y = zip(*points)
-    x_smooth = np.linspace(min(x), max(x), 300)
-    y_spline = make_interp_spline(x, y)(x_smooth)
-    return x_smooth, y_spline
+    n = len(x)
+    if len(y) != n:
+        raise ValueError("Input vectors x and y must have the same length")
+
+
+    # keep track of indices during which the starting point is reached
+    i_loop = [0]
+    p0 = np.array([x[0],y[0]])
+
+    # Calculate the distances between points
+    norm_vals = [0.0]
+    for i in range(1,n):
+        old_p = np.array([x[i-1],y[i-1]])
+        new_p = np.array([x[i],y[i]])
+        norm_vals.append(np.linalg.norm(new_p-old_p))
+
+        # check if we have reached starting point again
+        if np.linalg.norm(new_p-p0) == 0:
+            i_loop.append(i)
+
+    # create a parameter t based on the relative distance of along the path
+    accum_dist = np.cumsum(norm_vals)
+    t = [a / accum_dist[-1] for a in accum_dist]
+    t = np.array(t)
+
+    # fit splines for x and y independently
+    spl_x = make_interp_spline(t, x, k=min(degree, n-1))
+    spl_y = make_interp_spline(t, y, k=min(degree, n-1))
+
+
+    # if multiple loops, extract a middle loop (otherwise interpolate the entire curve)
+    if len(i_loop) >= 3:
+        i_start_idx = int(np.floor((len(i_loop)-0.5)/2))
+        i_end_idx = i_start_idx + 1
+        start_idx = i_loop[i_start_idx]
+        end_idx = i_loop[i_end_idx]
+    else:
+        start_idx = 0
+        end_idx = -1
+    t_fine = np.linspace(t[start_idx], t[end_idx], num_eval)
+
+    # Evaluate and return the smooth curve
+    return spl_x(t_fine), spl_y(t_fine)
 
 class RaceTrack:
     """A class representing a race track.
