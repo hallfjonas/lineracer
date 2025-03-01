@@ -103,6 +103,30 @@ class RaceTrack:
         for i in range(len(self.directions)):
             self.directions[i] /= np.linalg.norm(self.directions[i])
 
+    def assign_boundaries(self) -> bool:
+        """Assign the left and right boundaries of the track.
+
+        Returns:
+            True iff the race track does not intersect itself.
+        """
+        lb = self.middle_line.copy()
+        rb = self.middle_line.copy()
+        not_intersects = True
+        for i, _ in enumerate(self.middle_line):
+            d = self.directions[i]
+            n = np.array([d[1], -d[0]])
+            lb[i,:] += 0.5 * self.width * n
+            rb[i,:] -= 0.5 * self.width * n
+
+            if self.on_track(lb[i,:], tol=-self.width*0.01):
+                not_intersects = False
+
+            if self.on_track(rb[i,:], tol=-self.width*0.01):
+                not_intersects = False
+        self.left_boundary = lb
+        self.right_boundary = rb
+        return not_intersects
+
     def get_curvature(self, i: int) -> float:
         """Calculate the curvature at a given middle line point.
 
