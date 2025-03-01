@@ -360,6 +360,7 @@ class RaceTrack:
             The progress along the lap as a fraction between 0 and 1.
         """
         mp = self.project_to_middle_line(point)
+        return self.progress_map[tuple(mp)]
 
     def plot_directions(self, ax: plt.Axes = None, **kwargs) -> PlotObject:
         """Plot the directions of the track segments using matplotlib.
