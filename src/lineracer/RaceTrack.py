@@ -152,6 +152,20 @@ class RaceTrack:
         normalize = np.linalg.norm(nmp - mp) * np.linalg.norm(mp - omp)
         return (1-np.dot(nmp - mp, mp - omp)) / normalize
 
+    def check_curvature_constraints(self, **kwargs) -> bool:
+        """Check if the middle line satisfies curvature constraints.
+
+        Args:
+            **curve_max: The maximal allowed curvature. Defaults to 1e-1.
+        Returns:
+            True iff the middle line satisfies the curvature constraints
+        """
+        for i in range(self.n):
+            curve = self.get_curvature(i)
+            if curve < 0 or curve > kwargs.get('curve_max', 1e-1):
+                return False
+        return True
+
 
     def on_track(self, point, tol=0.0) -> bool:
         """Check if a given point lies within the track boundaries.
