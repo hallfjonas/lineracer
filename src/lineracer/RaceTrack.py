@@ -228,6 +228,26 @@ class RaceTrack:
         y = m_y + l_y + r_y
         return [min(x), max(x)], [min(y), max(y)]
 
+    def find_longest_straight(self, curv_tol = 1e-6) -> tuple:
+        """Find the longest straight segment in the track.
+
+        Args:
+            curv_tol: The curvature tolerance to consider a segment straight. Defaults to 1e-1.
+        Returns:
+            The start and end indices (from mid-line points) of the longest straight segment.
+        """
+        longest_straight = (0, 0)
+        cur_straight = (0, 0)
+        for i in range(self.n):
+            curve = self.get_curvature(i)
+            if curve < curv_tol:
+                cur_straight = (cur_straight[0], i)
+            else:
+                if cur_straight[1] - cur_straight[0] > longest_straight[1] - longest_straight[0]:
+                    longest_straight = cur_straight
+                cur_straight = (i, i)
+        return longest_straight
+
     def get_start_middle_point(self) -> tuple:
         """Get the intersection point between start line and mid-line."""
         idx = int(len(self.middle_line) / 10)
