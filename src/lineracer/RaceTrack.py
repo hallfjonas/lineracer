@@ -298,7 +298,7 @@ class RaceTrack:
         y = m_y + l_y + r_y
         return [min(x), max(x)], [min(y), max(y)]
 
-    def find_longest_straight(self, curv_tol = 1e-6) -> tuple:
+    def find_longest_straight(self, curve_tol = 1e-6) -> tuple:
         """Find the longest straight segment in the track.
 
         Args:
@@ -310,7 +310,7 @@ class RaceTrack:
         cur_straight = (0, 0)
         for i in range(self.n):
             curve = self.get_curvature(i)
-            if curve < curv_tol:
+            if curve < curve_tol:
                 cur_straight = (cur_straight[0], i)
             else:
                 if cur_straight[1] - cur_straight[0] > longest_straight[1] - longest_straight[0]:
