@@ -14,11 +14,9 @@ def test_track():
     assert isinstance(track, RaceTrack)
 
     sp = track.get_start_middle_point()
-    fp = track.get_finish_middle_point()
     assert isinstance(sp, tuple)
-    assert isinstance(fp, tuple)
     assert round(track.lap_progress(sp)) == 0
-    assert round(track.lap_progress(fp)) == 1
+    assert track.lap_progress(track.middle_line[-1,:]) > 0.95
 
 def test_race():
     race = Race(n_player=1, n_npc=2)
@@ -110,7 +108,7 @@ def test_collisions():
     assert on_track
     assert np.allclose(mp_line, mp2)
 
-    mp_end = track.get_finish_middle_point()
+    mp_end = track.middle_line[-1]
     on_track, mp_end = track.on_track_after(p1, mp_end)
     assert not on_track
 

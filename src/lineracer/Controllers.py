@@ -114,7 +114,7 @@ class DiscreteController(Controller):
                 # get next state
                 x = states.pop(0)
 
-                if x['k'] == self.horizon or x['progress'] >= track.progress_map[track.get_finish_middle_point()]:
+                if x['k'] == self.horizon or x['progress'] >= 1.0:
                     # check if current state is best
                     if x['progress'] > best_progress:
                         best_progress = x['progress']
