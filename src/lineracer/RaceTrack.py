@@ -434,9 +434,13 @@ class RaceTrack:
         po.add(self.plot_start_line(ax, color='white'))
 
         # fill between boundaries
-        po.add(ax.fill(np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
+        po.add(
+            ax.fill(
+                np.concatenate([self.left_boundary[:,0], self.right_boundary[::-1,0]]),
                 np.concatenate([self.left_boundary[:,1], self.right_boundary[::-1,1]]),
-                color=color))
+                color=color
+            )
+        )
 
         return po
 
