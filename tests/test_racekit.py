@@ -1,6 +1,7 @@
 
 import pytest
 import numpy as np
+import matplotlib.pyplot as plt
 
 # internal imports
 from lineracer.Race import Race
@@ -13,11 +14,9 @@ def test_track():
     assert isinstance(track, RaceTrack)
 
     sp = track.get_start_middle_point()
-    fp = track.get_finish_middle_point()
     assert isinstance(sp, tuple)
-    assert isinstance(fp, tuple)
     assert round(track.lap_progress(sp)) == 0
-    assert round(track.lap_progress(fp)) == 1
+    assert track.lap_progress(track.middle_line[-1,:]) > 0.95
 
 def test_race():
     race = Race(n_player=1, n_npc=2)
@@ -91,3 +90,53 @@ def test_brute_force_controller():
         assert np.allclose(v.position, pos + vel + c.u)
         assert np.allclose(v.velocity, vel + c.u)
         assert v.track.lap_progress(v.position) >= prog
+
+def test_collisions():
+    track = RaceTrack.generate_random_track()
+    p1 = track.get_start_middle_point()
+    assert track.on_track(p1)
+    on_track, mp1 = track.on_track_after(p1, p1)
+    assert on_track
+    assert np.allclose(mp1, p1)
+
+    i1 = track.i_map[p1]
+    p2 = track.middle_line[i1 + 5]
+    on_track, mp2 = track.on_track_after(p2, p1)
+    assert on_track
+
+    on_track, mp_line = track.line_on_track(p1, p2, mp1)
+    assert on_track
+    assert np.allclose(mp_line, mp2)
+
+    mp_end = track.middle_line[-1]
+    on_track, mp_end = track.on_track_after(p1, mp_end)
+    assert not on_track
+
+    v = Vehicle(track=track)
+    v.position = track.get_start_point(v.starting_grid_index)
+    start_direction = track.directions[track.i_map[track.get_start_middle_point()]]
+    start_normal = [-start_direction[1], start_direction[0]]
+    v.velocity = 10 * np.array(start_normal) / np.linalg.norm(start_normal)
+    v.position = p1 + v.velocity
+    collided, mp = v.check_collision()
+    assert collided
+    assert not np.allclose(v.position, track.get_start_point(v.starting_grid_index))
+
+def test_plot_racetrack():
+    track = RaceTrack.generate_random_track(
+        x_max = 20,
+        y_max = 9,
+    )
+
+    fig, ax = plt.subplots()
+    track.plot_curvature()
+    ax.set_yscale('log')
+
+    fig, ax = plt.subplots()
+    track.plot_track(ax)
+    ax.set_aspect('equal')
+
+    fig, ax = plt.subplots()
+    track.plot_directions(ax, alpha=0.1)
+    plt.show()
+

@@ -100,6 +100,7 @@ class DiscreteController(Controller):
 
         states = [{'pos': pos,
                    'vel': vel,
+                   'mp': track.project_to_middle_line(pos),
                    'u0': None,
                    'k': 0,
                    'progress': -np.inf,
@@ -113,7 +114,7 @@ class DiscreteController(Controller):
                 # get next state
                 x = states.pop(0)
 
-                if x['k'] == self.horizon or x['progress'] >= track.progress_map[track.get_finish_middle_point()]:
+                if x['k'] == self.horizon or x['progress'] >= 1.0:
                     # check if current state is best
                     if x['progress'] > best_progress:
                         best_progress = x['progress']
@@ -127,12 +128,17 @@ class DiscreteController(Controller):
                     new_mp = track.project_to_middle_line(new_p)
                     new_progress = track.progress_map[tuple(new_mp)]
 
-                    # ignore infeasible states
-                    if np.linalg.norm(new_p - new_mp) > 0.5 * track.width:
-                        continue
-
                     # ignore states that don't make positive progress
                     if new_progress <= x['progress']:
+                        continue
+
+                    # ignore infeasible states
+                    on_track, new_mp = self.track.line_on_track(
+                        point1=x['pos'],
+                        point2=new_p,
+                        mp=x['mp']
+                    )
+                    if not on_track:
                         continue
 
                     traj = [p for p in x['trajectory']]
@@ -140,6 +146,7 @@ class DiscreteController(Controller):
                     states.append({
                         'pos': new_p,
                         'vel': x['vel'] + uk,
+                        'mp': new_mp,
                         'u0': uk if x['k'] == 0 else x['u0'],
                         'k': x['k'] + 1,
                         'progress': new_progress,
