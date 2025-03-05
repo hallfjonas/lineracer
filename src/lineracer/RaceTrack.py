@@ -270,28 +270,37 @@ class RaceTrack:
         Args:
             point1: The starting point of the line segment (assumed to be of lower progress).
             point2: The ending point of the line segment  (assumed to be of larger progress).
-            mp: The middle line point to check from. Defaults to None.
+            *mp: The middle line point to start checking from. Defaults to None.
+            *grid_test_size: The size of the grid to test the line segment. Defaults to 0.1.
 
         Returns:
             tuple:
             - bool: True iff the line segment is on the track.
             - tuple: None if test failed, otherwise the first mid-line point verifying point2.
         """
+        # ensure start point on track
+        on_track, mp = self.on_track_after(point1, mp)
+        if not on_track:
+            return False, None
 
-        if mp is None:
-            mp = self.project_to_middle_line(point1)
+        # ensure end point on track (between mp and mp + quarter of the track length)
+        mp_end = self.middle_line[(self.i_map[tuple(mp)] + self.n // 4) % self.n]
+        on_track, mp2 = self.on_track_between(point2, mp, mp_end)
+        if not on_track:
+            return False, None
 
-        # generate a test grid based of desired size
+        # check between the points
         nrm = np.linalg.norm(point2 - point1)
-        test_grid = np.linspace(point1, point2, int(nrm / grid_test_size))
+        if nrm < grid_test_size:
+            return True, mp2
 
-        # for each point in the grid, check if it is on the track after the previous mid-line point
-        for p in test_grid:
-            on_track, mp = self.on_track_after(p, mp)
+        test_grid = np.linspace(point1, point2, int(nrm / grid_test_size), endpoint=False)
+        for i, p in enumerate(test_grid, start=1):
+            on_track, mp = self.on_track_between(p, mp1=mp, mp2=mp2)
             if not on_track:
                 return False, None
-        on_track, mp = self.on_track_after(point2, mp)
-        return on_track, mp
+
+        return on_track, mp2
 
     def get_start_point(self, starting_grid_index: int) -> tuple:
         """Get the starting point of the track.
