@@ -152,4 +152,5 @@ class DiscreteController(Controller):
                         'progress': new_progress,
                         'trajectory': traj
                     })
-        self.u = best_state['u0']
+        if best_state is not None:
+            self.u = best_state['u0']
