@@ -209,20 +209,31 @@ class RaceTrack:
         """
         return self.distance_to_middle_line(point) <= self.width / 2 + tol
 
-    def on_track_after(self, point, middle_line_point: tuple) -> Tuple[bool, tuple]:
+    def on_track_at(self, point, mp: tuple) -> bool:
+        """Check if a point is on the track at a given mid-line point.
+
+        Args:
+            point: The point to check.
+            mp: The mid-line point to check from.
+        """
+        return np.linalg.norm(mp - np.array(point)) <= 0.5 * self.width
+
+    def on_track_after(self, point, middle_line_point: tuple = None) -> Tuple[bool, tuple]:
         """Check if a point is on the track after a given mid-line point.
 
         The advantage of this method is that it provides a quick check if we roughly know where it
         is on the track. This is particularly useful if we want to check if a vehicle remains on the
-        track when moving from one point to the next.
+        track when moving from one point to the next. If no mid-line point is provided, the function
+        will start checking at the first mid-line point.
         Args:
             point: The point to check.
-            middle_line_point: The first mid-line point to check from.
+            *middle_line_point: The first mid-line point to check from. Defaults to None.
         Returns:
             tuple:
             - bool: True iff the point is on the track after the given mid-line point
             - tuple: The first mid-line point verifying that the point was on track.
         """
+        return self.on_track_between(point, middle_line_point)
 
     def on_track_between(self, point, mp1 = None, mp2 = None) -> Tuple[bool, tuple]:
         """Check if a point is on the track between two mid-line points.
