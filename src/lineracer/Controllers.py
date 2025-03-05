@@ -73,7 +73,7 @@ class DiscreteController(Controller):
         """
         super().__init__(**kwargs)
         self.grid = kwargs.get('grid', Grid())
-        self.horizon = kwargs.get('horizon', 4)
+        self.horizon = kwargs.get('horizon', 3)
         self.controls = []
         for i in [-1,0,1]:
             for j in [-1,0,1]:
