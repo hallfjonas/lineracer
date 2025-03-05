@@ -108,8 +108,21 @@ def test_collisions():
     assert on_track
     assert np.allclose(mp_line, mp2)
 
-    mp_end = track.middle_line[-1]
-    on_track, mp_end = track.on_track_after(p1, mp_end)
+    mp_half_way = track.middle_line[int(0.5 * track.n)]
+    on_track, _ = track.on_track_after(p1, mp_half_way)
+    assert on_track
+
+    on_track, _ = track.on_track_after(mp_half_way, mp1)
+    assert on_track
+
+    on_track, _ = track.line_on_track(p1, mp_half_way)
+    assert not on_track
+
+    on_track, mp_end = track.on_track_between(p1, mp_half_way, mp2)
+    assert on_track
+
+    mp_3_4_way = track.middle_line[int(0.75 * track.n)]
+    on_track, _ = track.on_track_between(p1, mp_half_way, mp_3_4_way)
     assert not on_track
 
     v = Vehicle(track=track)
