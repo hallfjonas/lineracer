@@ -112,60 +112,60 @@ class DiscreteController(Controller):
         print(f"Computing control for {pos} with velocity {vel}...")
 
         start_time = time.time()
-        while len(states) > 0:
-            while len(states) > 0 and time.time() - start_time < self.time_limit:
 
-                # get next state
-                x = states.pop(0)
+        while len(states) > 0 and time.time() - start_time < self.time_limit:
 
-                # check if current state is best
-                if x['progress'] > best_progress:
-                    best_progress = x['progress']
-                    best_state = x
-                    print(f"... best progress: {best_progress}")
+            # get next state
+            x = states.pop(0)
 
-                if x['k'] == self.horizon:
+            # check if current state is best
+            if x['progress'] > best_progress:
+                best_progress = x['progress']
+                best_state = x
+                print(f"... best progress: {best_progress}")
+
+            if x['k'] == self.horizon:
+                continue
+
+            # if not at end of horizon add next states
+            for uk in self.get_feasible_controls():
+                new_p = x['pos'] + x['vel'] + uk
+                new_mp = track.project_to_middle_line(new_p)
+                idx_old = track.i_map[tuple(x['mp'])]
+                idx_new = track.i_map[tuple(new_mp)]
+                new_lap = x['lap'] if idx_new >= idx_old else x['lap'] + 1
+                new_lap_progress = track.progress_map[tuple(new_mp)]
+                new_progress = new_lap + new_lap_progress
+
+                # ignore states that don't make positive progress
+                if new_progress < x['progress']:
                     continue
 
-                # if not at end of horizon add next states
-                for uk in self.get_feasible_controls():
-                    new_p = x['pos'] + x['vel'] + uk
-                    new_mp = track.project_to_middle_line(new_p)
-                    idx_old = track.i_map[tuple(x['mp'])]
-                    idx_new = track.i_map[tuple(new_mp)]
-                    new_lap = x['lap'] if idx_new >= idx_old else x['lap'] + 1
-                    new_lap_progress = track.progress_map[tuple(new_mp)]
-                    new_progress = new_lap + new_lap_progress
+                # don't allow shortcuts (in particular at beginning of race)
+                if new_progress > x['progress'] + 0.5:
+                    continue
 
-                    # ignore states that don't make positive progress
-                    if new_progress < x['progress']:
-                        continue
+                # ignore infeasible states
+                on_track, new_mp = self.track.line_on_track(
+                    point1=x['pos'],
+                    point2=new_p,
+                    mp=x['mp']
+                )
 
-                    # don't allow shortcuts (in particular at beginning of race)
-                    if new_progress > x['progress'] + 0.5:
-                        continue
+                if not on_track:
+                    continue
 
-                    # ignore infeasible states
-                    on_track, new_mp = self.track.line_on_track(
-                        point1=x['pos'],
-                        point2=new_p,
-                        mp=x['mp']
-                    )
-
-                    if not on_track:
-                        continue
-
-                    traj = [p for p in x['trajectory']]
-                    traj.append(new_p)
-                    states.append({
-                        'pos': new_p,
-                        'vel': x['vel'] + uk,
-                        'mp': new_mp,
-                        'u0': uk if x['k'] == 0 else x['u0'],
-                        'k': x['k'] + 1,
-                        'progress': new_progress,
-                        'lap': new_lap,
-                        'trajectory': traj
-                    })
+                traj = [p for p in x['trajectory']]
+                traj.append(new_p)
+                states.append({
+                    'pos': new_p,
+                    'vel': x['vel'] + uk,
+                    'mp': new_mp,
+                    'u0': uk if x['k'] == 0 else x['u0'],
+                    'k': x['k'] + 1,
+                    'progress': new_progress,
+                    'lap': new_lap,
+                    'trajectory': traj
+                })
         if best_state is not None:
             self.u = best_state['u0']
