@@ -223,11 +223,35 @@ class RaceTrack:
             - bool: True iff the point is on the track after the given mid-line point
             - tuple: The first mid-line point verifying that the point was on track.
         """
-        idx = self.i_map[tuple(middle_line_point)]
-        for i in range(idx, len(self.middle_line) - 1):
-            if np.linalg.norm(self.middle_line[i] - np.array(point)) <= 0.5 * self.width:
-                return True, self.middle_line[i]
-        return False, None
+
+    def on_track_between(self, point, mp1 = None, mp2 = None) -> Tuple[bool, tuple]:
+        """Check if a point is on the track between two mid-line points.
+
+        If the second mid-line point is not provided, the function will check all mid-line points
+        starting from the provided one. Otherwise, the search will terminate after reaching the
+        second point. If the first mid-line point is not provided, the function will start checking
+        from the first mid-line point.
+
+        Args:
+            point: The point to check.
+            *mp1: The first mid-line point to check from. Defaults to None.
+            *mp2: The second mid-line point to check to. Defaults to None.
+        Returns:
+            tuple:
+            - bool: True iff the point is on the track between the two mid-line points.
+            - tuple: The first mid-line point verifying that the point was on track.
+        """
+        if mp1 is None:
+            mp1 = self.middle_line[0]
+        if mp2 is None:
+            mp2 = self.middle_line[self.i_map[tuple(mp1)] - 1]
+        idx = self.i_map[tuple(mp1)]
+        idx2 = self.i_map[tuple(mp2)]
+        while not self.on_track_at(point, self.middle_line[idx]):
+            if idx == idx2:
+                return False, None
+            idx = (idx + 1) % self.n
+        return True, self.middle_line[idx]
 
     def line_on_track(self, point1, point2, mp = None, grid_test_size=0.1) -> Tuple[bool, tuple]:
         """Check if a line segment lies within the track boundaries.
