@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends\
     python3-pip \
     git \
     python3-tk \
+    openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python packages listed in the requirements.txt
