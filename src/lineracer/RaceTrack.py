@@ -164,6 +164,14 @@ class RaceTrack:
         if np.linalg.norm(middle_line[0] - middle_line[-1]) > tol:
             raise ValueError("The middle line must be a closed path.")
 
+    def get_direction(self, mp: tuple) -> np.ndarray:
+        """Get the direction at a given mid-line point.
+
+        Args:
+            mp: The mid-line point to get the direction from.
+        """
+        return self.directions[self.i_map[tuple(mp)]]
+
     def get_curvature(self, i: int) -> float:
         """Calculate the curvature at a given middle line point.
 
