@@ -104,7 +104,7 @@ class DiscreteController(Controller):
                    'mp': track.project_to_middle_line(pos),
                    'u0': None,
                    'k': 0,
-                   'progress': -np.inf,
+                   'progress': 0,
                    'lap': 0,
                    'trajectory': [pos]}]
 
@@ -130,11 +130,18 @@ class DiscreteController(Controller):
                 for uk in self.get_feasible_controls():
                     new_p = x['pos'] + x['vel'] + uk
                     new_mp = track.project_to_middle_line(new_p)
-                    new_progress = track.progress_map[tuple(new_mp)]
-                    new_lap = x['lap'] if new_progress >= x['progress'] else x['lap'] + 1
+                    idx_old = track.i_map[tuple(x['mp'])]
+                    idx_new = track.i_map[tuple(new_mp)]
+                    new_lap = x['lap'] if idx_new >= idx_old else x['lap'] + 1
+                    new_lap_progress = track.progress_map[tuple(new_mp)]
+                    new_progress = new_lap + new_lap_progress
 
                     # ignore states that don't make positive progress
-                    if new_progress <= x['progress'] and new_lap <= x['lap']:
+                    if new_progress < x['progress']:
+                        continue
+
+                    # don't allow shortcuts (in particular at beginning of race)
+                    if new_progress > x['progress'] + 0.5:
                         continue
 
                     # ignore infeasible states
