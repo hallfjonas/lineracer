@@ -104,6 +104,7 @@ class DiscreteController(Controller):
                    'u0': None,
                    'k': 0,
                    'progress': -np.inf,
+                   'lap': 0,
                    'trajectory': [pos]}]
 
         print(f"Computing control for {pos} with velocity {vel}...")
@@ -116,8 +117,8 @@ class DiscreteController(Controller):
 
                 if x['k'] == self.horizon or x['progress'] >= 1.0:
                     # check if current state is best
-                    if x['progress'] > best_progress:
-                        best_progress = x['progress']
+                    if x['progress'] + x['lap'] > best_progress:
+                        best_progress = x['progress']+ x['lap']
                         best_state = x
                         print(f"... best progress: {best_progress}")
                     continue
@@ -127,9 +128,10 @@ class DiscreteController(Controller):
                     new_p = x['pos'] + x['vel'] + uk
                     new_mp = track.project_to_middle_line(new_p)
                     new_progress = track.progress_map[tuple(new_mp)]
+                    new_lap = x['lap'] if new_progress >= x['progress'] else x['lap'] + 1
 
                     # ignore states that don't make positive progress
-                    if new_progress <= x['progress']:
+                    if new_progress <= x['progress'] and new_lap <= x['lap']:
                         continue
 
                     # ignore infeasible states
@@ -138,6 +140,7 @@ class DiscreteController(Controller):
                         point2=new_p,
                         mp=x['mp']
                     )
+
                     if not on_track:
                         continue
 
@@ -150,6 +153,7 @@ class DiscreteController(Controller):
                         'u0': uk if x['k'] == 0 else x['u0'],
                         'k': x['k'] + 1,
                         'progress': new_progress,
+                        'lap': new_lap,
                         'trajectory': traj
                     })
         if best_state is not None:
