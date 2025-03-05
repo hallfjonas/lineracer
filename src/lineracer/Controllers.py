@@ -3,6 +3,7 @@
 import numpy as np
 import warnings
 import matplotlib.pyplot as plt
+import time
 
 # internal imports
 from lineracer.Race import RaceTrack
@@ -73,7 +74,7 @@ class DiscreteController(Controller):
         """
         super().__init__(**kwargs)
         self.grid = kwargs.get('grid', Grid())
-        self.horizon = kwargs.get('horizon', 3)
+        self.time_limit = kwargs.get('time_limit', 1.0)
         self.controls = []
         for i in [-1,0,1]:
             for j in [-1,0,1]:
@@ -109,18 +110,20 @@ class DiscreteController(Controller):
 
         print(f"Computing control for {pos} with velocity {vel}...")
 
+        start_time = time.time()
         while len(states) > 0:
-            while len(states) > 0:
+            while len(states) > 0 and time.time() - start_time < self.time_limit:
 
                 # get next state
                 x = states.pop(0)
 
-                if x['k'] == self.horizon or x['progress'] >= 1.0:
-                    # check if current state is best
-                    if x['progress'] + x['lap'] > best_progress:
-                        best_progress = x['progress']+ x['lap']
-                        best_state = x
-                        print(f"... best progress: {best_progress}")
+                # check if current state is best
+                if x['progress'] > best_progress:
+                    best_progress = x['progress']
+                    best_state = x
+                    print(f"... best progress: {best_progress}")
+
+                if x['k'] == self.horizon:
                     continue
 
                 # if not at end of horizon add next states
